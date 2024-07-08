@@ -53,3 +53,12 @@ class web_element:
         else:
             logging.CRITICAL("There is no element to send keys to.")
             return False
+        
+
+    def get_child_element(self) -> int:
+        """Return the number of child elements of the element
+
+        Returns:
+            int: Number of the child element. Return 0 if there's no element found
+        """
+

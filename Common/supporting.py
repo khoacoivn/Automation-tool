@@ -3,10 +3,12 @@ from jira_insight import Insight
 from pandas import DataFrame, read_excel
 from streamlit.runtime.uploaded_file_manager import UploadedFile
 import logging
+import pandas as pd
+
 
 
 def __auth_gen(file: UploadedFile = None, path: str = None) -> tuple:
-    """The basikc account/password reader from file. The UploadedFile from Streamlit will be prioritized.
+    """The basic account/password reader from file. The UploadedFile from Streamlit will be prioritized.
 
     Args:
         file (UploadedFile, optional): The UploadedFile, read from streamlit.file_uploader. Defaults to None.
@@ -106,3 +108,5 @@ def support_Excel_read(read_path: str, sheet_name: str = "Sheet1") -> DataFrame:
 
 def push_error_to_MSTeams(webhook: str) -> None:
     pass
+
+

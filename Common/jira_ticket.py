@@ -6,11 +6,10 @@ import logging
 
 class jira_ticket:
     def __init__(self, ticket: any) -> None:
-        """_summary_
+        """The init functions for creating a jira_ticket object
 
         Args:
-            flag (bool): _description_
-            value (any): _description_
+            ticket (any): hosting a Jira ticket
         """
 
         self.jira_session = supporting.jira_Auth()

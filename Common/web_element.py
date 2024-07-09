@@ -35,7 +35,7 @@ class web_element:
             self.value.click()
             return True
         else:
-            logging.CRITICAL("There is no element to click.")
+            logging.critical("There is no element to click.")
             return False
 
     def send_keys(self, keys: str) -> bool:
@@ -51,7 +51,7 @@ class web_element:
             self.value.send_keys(keys)
             return True
         else:
-            logging.CRITICAL("There is no element to send keys to.")
+            logging.critical("There is no element to send keys to.")
             return False
         
 

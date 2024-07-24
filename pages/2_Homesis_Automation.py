@@ -8,10 +8,7 @@ from Activity.homesis_actions import (
 
 def main():
     """
-    This script is used for automating user account activation, deactivation, and reactivation in UMC (User Management Console).
-    It utilizes the Streamlit library for creating a user interface and Selenium for interacting with the UMC web application.
-    The script allows the user to input LDAP credentials, upload a CSV file containing HR codes or login names, and perform various actions on the user accounts.
-    The available actions include activating accounts, deactivating accounts with a chosen reason, and reactivating accounts.
+    This function is to support SD task interact with Homesis
     """
 
 

@@ -20,18 +20,15 @@ def create_sa_account(homesis_page: homesis, hr_code: str, id_number: str, note:
 
     homesis_page.search_hrid(hrid=hr_code)
 
-    #insert check status here :)))))) nay in progress dung co quen nha
-
     if homesis_page.get_search_account_status != "Inactive":
 
         homesis_page.click_details_button()
         homesis_page.fill_id_number(id_number)
-
-        # homesis_page.element_by_id( code, id_selector, value)
         homesis_page.fill_role_in_bank(role)
         homesis_page.fill_note(note)
         homesis_page.chose_supervisor(supervisor_code)
-
-    # homesis_page.click_save_button()
-    return True
+        return homesis_page.click_save_button()
+    
+    return False
+   
 

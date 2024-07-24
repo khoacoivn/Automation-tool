@@ -1,7 +1,5 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import Select
-from selenium.webdriver.common.keys import Keys
 from Common.web_element import web_element
 from time import sleep
 
@@ -109,6 +107,4 @@ class page_object:
         """
         self.driver.get(url=url)
     
-    def clearText(self, webElement: web_element):
-        webElement.send_keys(Keys.CONTROL + "a")
-        webElement.send_keys(Keys.DELETE)
+

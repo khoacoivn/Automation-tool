@@ -1,6 +1,5 @@
 #homesis
-class CSS:
-    class homesis_css:
+class homesis_css:
         #CSS to style a upload file button in change role in bank section
         css = '''
         <style>

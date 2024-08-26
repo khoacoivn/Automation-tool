@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from Common.constant.css_file import CSS
+from Common.constant.css_file import homesis_css
 
 from Activity.homesis_actions import (
     login_to_site,
@@ -8,7 +8,9 @@ from Activity.homesis_actions import (
     add_role_in_bank_SA,
     add_role_in_bank_RA_FPT,
     add_role_in_bank_RA_New_Segment,
-    change_role_in_bank
+    change_role_in_bank,
+    add_sup_code,
+    update_note
 )
 
 def main():
@@ -137,7 +139,7 @@ def main():
            
     section_divided_caption_other_action = st.subheader("Update Homesis information", divider= "red")
 
-    Change_role_in_bank, Add_sup_code, other = st.tabs(["Change Role-in-bank","Add sup code", "Other"])
+    Change_role_in_bank, Add_sup_code, Update_note, other = st.tabs(["Change Role-in-bank","Add sup code","Update Note", "Other"])
 
     with Change_role_in_bank:
         left, rigth = st.columns(2, vertical_alignment="bottom")
@@ -164,7 +166,7 @@ def main():
         )
         
         #Input css for upload file in change role in bank section
-        st.markdown(CSS.homesis_css.css, unsafe_allow_html=True)
+        st.markdown(homesis_css.css, unsafe_allow_html=True)
 
         #Change role in bank button
         change_role_in_bank_btn = st.button("Change Role-in-Bank", type= "primary")
@@ -180,8 +182,65 @@ def main():
                 role = option
                 change_role_in_bank(homesis_page = homesis_page, hr_code = hr_code, role = option)
                 homesis_page.get_homesis_url()
-                homesis_page.access_user_managerment() 
-
+                homesis_page.access_user_managerment()
+    
+    with Add_sup_code:
+        st.text(":red[Please make sure these user are not assign any sup code before]")
+        #Insert excel file for add sup code
+        csv_upload_homesis_add_sup_code = st.file_uploader(
+            label="Please input list user and their sup code",
+            type=["csv", "txt"],
+            accept_multiple_files=False,
+        )
+        
+        # Read CSV Data
+        if csv_upload_homesis_add_sup_code is not None:
+            csv_data_add_sup_code = pd.read_csv(csv_upload_homesis_add_sup_code, converters={"HR Code": str, "Supervisor code" : str})
+            result_table = st.write(csv_data_add_sup_code)
+            
+        # nhét chức năng thêm dô ở đây
+        add_sup_code_btn = st.button("Add Sup Code", type= "primary")
+        if add_sup_code_btn:
+            # Start Selenium
+            homesis_page = login_to_site(ldap_user=ldap_user, ldap_pw=ldap_pw)
+            homesis_page.access_user_managerment()
+        
+            # Loop through CSV & Search for HR Code and take data from CSV
+            for index, row in csv_data_add_sup_code.iterrows():
+                hr_code = row["HR Code"]
+                supervisor = row["Supervisor code"]               
+                list_error = add_sup_code(homesis_page = homesis_page, hr_code = hr_code, supervisor_code = supervisor)
+                st.write(list_error)
+                homesis_page.get_homesis_url()
+                homesis_page.access_user_managerment()             
+    
+    with  Update_note:
+        #Insert excel file for create Homesis account
+        csv_upload_homesis_update_note = st.file_uploader(
+            label="Please input list user and their note update",
+            type=["csv", "txt"],
+            accept_multiple_files=False,
+        )
+        
+        # Read CSV Data
+        if csv_upload_homesis_update_note is not None:
+            csv_data_update_note = pd.read_csv(csv_upload_homesis_update_note, converters={"HR Code": str, "Note" : str})
+            result_table = st.write(csv_data_update_note)
+            
+        # nhét chức năng thêm dô ở đây
+        update_note_btn = st.button("Update Note", type= "primary")
+        if update_note_btn:
+            # Start Selenium
+            homesis_page = login_to_site(ldap_user=ldap_user, ldap_pw=ldap_pw)
+            homesis_page.access_user_managerment()
+        
+            # Loop through CSV & Search for HR Code and take data from CSV
+            for index, row in csv_data_update_note.iterrows():
+                hr_code = row["HR Code"]
+                note = row["Notes"]               
+                update_note(homesis_page = homesis_page, hr_code = hr_code, note= note)
+                homesis_page.get_homesis_url()
+                homesis_page.access_user_managerment()
 
 if __name__ == "__main__":
     main()

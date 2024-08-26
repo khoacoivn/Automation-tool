@@ -119,6 +119,10 @@ class homesis(Page):
 
     def fill_note(self, note) -> bool:
         return self.search_by_xpath(self.homesis_note_text_field).send_keys(note)
+
+    def update_note(self, note) -> bool:
+        self.search_by_xpath(self.homesis_note_text_field).clearText()
+        return self.search_by_xpath(self.homesis_note_text_field).send_keys(note)   
     
     def fill_role_in_bank(self, role) -> bool:
         return self.search_by_xpath(self.homesis_role_bank_selector).send_keys(role)

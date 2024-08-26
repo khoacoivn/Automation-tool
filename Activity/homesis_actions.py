@@ -106,4 +106,27 @@ def change_role_in_bank(homesis_page: homesis, hr_code: str, role: str) -> bool:
         time.sleep(1)
         homesis_page.fill_role_in_bank(role)
         time.sleep(1)
-        homesis_page.click_save_button()
+        return homesis_page.click_save_button()
+    
+
+#This funtion is to add sup code
+def add_sup_code(homesis_page: homesis, hr_code: str, supervisor_code: str) -> list:
+    list_of_error = []
+    homesis_page.search_hrid(hrid=hr_code)
+    
+    if homesis_page.click_details_button():
+        if homesis_page.chose_supervisor(supervisor_code) == False:
+            list_of_error.append(hr_code + " - " + ErrorMessage.homesis_message.CAN_NOT_FIND_SUP_CODE)
+        if homesis_page.click_save_button():
+            list_of_error.append(hr_code + " - " + ErrorMessage.homesis_message.CLICK_SAVE_BUTTON)
+    else:
+        list_of_error.append(hr_code + "-" + ErrorMessage.homesis_message.CAN_NOT_FIND_USER)
+    return list_of_error
+
+#This funtion is to add sup code
+def update_note(homesis_page: homesis, hr_code: str, note: str) -> bool:
+    homesis_page.search_hrid(hrid=hr_code)
+    
+    if homesis_page.click_details_button():
+        homesis_page.update_note(note)
+        return homesis_page.click_save_button()

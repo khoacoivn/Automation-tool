@@ -7,7 +7,8 @@ from Activity.umc_actions import (
     reactivate_user,
     remove_role,
     roles_table,
-    deactivate_ra
+    deactivate_ra,
+    check_inactive
 )
 
 
@@ -146,6 +147,40 @@ def main():
             hr_code = row["HR Code"]
             deactivate_ra(umc_page=umc_page, hr_code=hr_code)
             umc_page.get_umc_url()
+    
+    #check active account UMC
+    st.divider()
+    st.text("Check status account UMC")
+    hr_code_input_area = st.text_area("Input Hr code here")
+    hr_code_input_area_lines = hr_code_input_area.split("\n") #This return a list of text area value
+    check_status_btn = st.button("Check status account", type= "primary")
+
+    if check_status_btn:
+         # Start Selenium
+        umc_page = login_to_site(ldap_user=ldap_user, ldap_pw=ldap_pw)
+        # Initial dataframe saving user status
+        data_user_status = pd.DataFrame(columns=['Hr Code', 'Status'])
+
+        # Loop through list of user input in text area
+        for index in range(len(hr_code_input_area_lines)):
+            hr_code = hr_code_input_area_lines[index]
+            #check if user is inactive
+            if check_inactive(umc_page=umc_page, hr_code=hr_code) == False:
+                data_user_status = data_user_status._append({'Hr Code': hr_code, 'Status':"Inactive"}, ignore_index = True)
+            else:
+                data_user_status = data_user_status._append({'Hr Code': hr_code, 'Status':"Active"}, ignore_index = True)            
+            umc_page.get_umc_url()
+        
+        #display result    
+        left, rigth = st.columns(2, vertical_alignment="top")
+        left.subheader(":red[Total result]") 
+        left.text("Successfully run " + str(len(hr_code_input_area_lines)) + " users")
+        left.write(data_user_status)
+        data_user_status_inactive = data_user_status[data_user_status['Status'] == 'Inactive']
+        rigth.subheader(":red[Inactive user]")
+        rigth.write(data_user_status_inactive)
+        
+            
 
 if __name__ == "__main__":
     main()

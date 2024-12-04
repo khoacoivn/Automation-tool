@@ -1,4 +1,6 @@
 from Sites.umc import umc
+from Common.constant.error_message import ErrorMessage
+import pandas as pd
 
 roles_table = [
     "NON_HOSEL_USER",
@@ -178,6 +180,7 @@ def remove_role(umc_page: umc, hr_code:str, role:str) -> bool:
 
         # Check if Update sucessfully
         umc_page.verify_updated_role()
+    
     return umc_page.verify_updated_role()
 
 def deactivate_ra(umc_page: umc, hr_code:str) -> bool:
@@ -199,3 +202,14 @@ def deactivate_ra(umc_page: umc, hr_code:str) -> bool:
         umc_page.click_details_button()
     # Click deactive button
     return umc_page.click_deactivate()
+
+def check_inactive(umc_page: umc, hr_code:str) -> bool:
+    umc_page.search_hrid(hrid=hr_code)
+    # Get account Status before running
+    umc_page.get_search_account_status()
+
+    # Check if account is Inactive
+    if umc_page.get_search_account_status() == "Inactive":
+        return False
+    else:
+        return True

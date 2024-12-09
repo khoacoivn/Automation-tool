@@ -45,8 +45,8 @@ def create_bank_branch_single(bsl_page: bsl, bank_name: str, bank_branch_name: s
                 error_message = "Can't select bank district"
             if bsl_page.fill_branch_code(code=bank_branch_code) is False:
                 error_message = "Fill bank branch code error"
-            # if bsl_page.click_OK_create_button() is False:
-            #     error_message = "OK button error!"
+            if bsl_page.click_OK_create_button() is False:
+                error_message = "OK button error!"
         else:
             error_message = "Error when clicking create new branch!"
     else:

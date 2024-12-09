@@ -1,5 +1,10 @@
 import streamlit as st
 import pandas as pd
+import time
+
+from Common.supporting import (
+    bsl_bank_name_crosscheck
+)
 
 from Activity.bsl_actions import (
     login_to_site,
@@ -28,8 +33,19 @@ def main():
         
     pass
 
-def tab1_exec(username, password):
-    #Insert excel file for create bank branch
+def tab1_exec(username: str, password: str):
+    """tab1_exec execute add bank branch function
+
+    Args:
+        username (str): str value of login name
+        password (str): str value of password
+    """
+    # Preload Data File to for BSL to compare
+    preload_path = r"Common\data\bank_list.txt"
+    f = open(preload_path, "r", encoding="utf8")
+    bank_name_list = f.readlines()
+    
+    # Insert excel file for create bank branch
     excel_upload_branch_template = st.file_uploader(
         label="Please upload ticket template file here",
         type=["xlsx"],
@@ -49,15 +65,21 @@ def tab1_exec(username, password):
             bsl_page.click_find_bank()
             for index, row in excel_data.iterrows():
                 bank_name = row[excel_data.columns[0]]
-                branch_code = row[excel_data.columns[1]]
-                branch_name = row[excel_data.columns[2]]
-                branch_region = row[excel_data.columns[4]]
-                branch_district = row[excel_data.columns[5]]
-                create_bank_branch_single(bsl_page=bsl_page, bank_name=bank_name, bank_branch_name=branch_name, bank_branch_code=branch_code, region=branch_region, district=branch_district)
-                bsl_page.get_bsl_url()
-                bsl_page.click_find_bank()
+                if bsl_bank_name_crosscheck(bank_name_list=bank_name_list, bank_name=bank_name) is True:
+                    branch_code = row[excel_data.columns[1]]
+                    branch_name = row[excel_data.columns[2]]
+                    branch_region = row[excel_data.columns[4]]
+                    branch_district = row[excel_data.columns[5]]
+                    create_bank_branch_single(bsl_page=bsl_page, bank_name=bank_name, bank_branch_name=branch_name, bank_branch_code=branch_code, region=branch_region, district=branch_district)
+                    bsl_page.get_bsl_url()
+                    bsl_page.click_find_bank()
+                    continue #Continue to next iteration if bank name not valid on correct bank sample
+                else:
+                    continue
+
 
 def tab2_exec(username, password):
+    # bsl_page = login_to_site(username, password)
     pass
 if __name__ == "__main__":
     main()

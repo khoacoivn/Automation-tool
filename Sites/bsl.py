@@ -105,7 +105,7 @@ class bsl(Page):
         Returns:
             bool: The result if the button can be clicked or not
         """
-        return self.search_by_xpath(self.first_search_detail_button).click()
+        return self.search_by_xpath(self.first_search_detail_button, delay=0.5).click()
     
     def click_create_branch(self) -> bool:
         """This is click new branch button method
@@ -132,7 +132,7 @@ class bsl(Page):
         Returns:
             bool: 
         """
-        return self.select_dropdown(self.bank_branch_status, value=value)
+        return self.select_dropdown_value(self.bank_branch_status, value=value, delay=0.5)
     
     def fill_branch_code(self, code: str) -> bool:
         """This is to fill bank branch code in create screen
@@ -141,33 +141,52 @@ class bsl(Page):
             code (str): the branch code intended to be filled
 
         Returns:
-            bool: _description_
+            bool: result of the action
         """
-        return self.search_by_xpath(self.bank_branch_code).send_keys(code)
+        return self.search_by_xpath(self.bank_branch_code, delay=2).send_keys(code)
     
     def select_branch_region(self, region: str) -> bool:
-        """_summary_
+        """This is to select branch region
 
         Args:
-            region (str): _description_
+            region (str): str value of branch region
 
         Returns:
-            bool: _description_
+            bool: result of the action
         """
-        return self.select_dropdown(self.select_branch_region, value=region)
+        return self.select_dropdown_by_visible_text(self.bank_branch_region, value=region.strip(), delay=0.5)
     
     def select_branch_district(self, district: str) -> bool:
-        """_summary_
+        """This is to select branch district location, note that there is another data cleaning function to ensure the dropdown value can be selected on PROD env
 
         Args:
-            district (str): _description_
+            district (str): str value of district
 
         Returns:
-            bool: _description_
+            bool: result of the action
         """
-        return self.select_dropdown(self.select_branch_district, value=district)
+        district = self.remove_district_prefix(district) #cleaning function called
+        return self.select_dropdown_by_contains_text(self.bank_branch_district, value=district, delay=0.5)
     
     def click_OK_create_button(self) -> None:
         """This method finalize the bank branch creation with OK button
         """
         return self.search_by_xpath(self.OK_button).click()
+    
+    def remove_district_prefix(self, district: str) -> str:
+        """As the district information is always input manually, so there is no validation or alignment of data consistency.
+        This function will perform trying to CLEAN the inputted data as much as it can
+
+        Args:
+            district (str): str value of district
+
+        Returns:
+            str: str value of district (after cleaning)
+        """
+        clean_data = ""
+        lst = ['H.','Q.', 'TT.', 'TX.', 'TP.', 'Quận', 'Huyện', 'Thị Xã', 'Thị Trấn', 'Thành Phố']
+        for pref in lst:
+            if pref in district:
+                clean_data = district.replace(pref, '')
+                return clean_data.strip()
+        return district.strip()

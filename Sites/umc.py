@@ -27,6 +27,7 @@ class umc(Page):
     detail_button = '//*[contains(text(),"Detail")]'
     block_button = '//button//*[contains(text(),"Block")]'
     deactivate_button = '//button//*[contains(text(),"Deactivate")]'
+    reactivate_button = '//button//*[contains(text(),"Activate")]'
     edit_button = '//button//*[contains(text(),"Edit")]'
     search_result_status = '//div[@data-better-uid="search-results:status"]'
 
@@ -126,6 +127,21 @@ class umc(Page):
         else:
             self.get_umc_url()
             return True
+        
+    def click_reactivate(self) -> bool:
+        """
+        This method clicks the deactivate button.
+
+        Returns:
+            bool: False if the button is clicked, True otherwise.
+        """
+        button = self.search_by_xpath(self.reactivate_button)
+        if button.flag:
+            button.click()
+            return False
+        else:
+            self.get_umc_url()
+            return True    
 
     def click_edit(self) -> None:
         """

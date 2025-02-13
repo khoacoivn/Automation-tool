@@ -27,6 +27,7 @@ class umc(Page):
     detail_button = '//*[contains(text(),"Detail")]'
     block_button = '//button//*[contains(text(),"Block")]'
     deactivate_button = '//button//*[contains(text(),"Deactivate")]'
+    reactivate_button = '//button//*[contains(text(),"Activate")]'
     edit_button = '//button//*[contains(text(),"Edit")]'
     search_result_status = '//div[@data-better-uid="search-results:status"]'
 
@@ -126,7 +127,7 @@ class umc(Page):
         else:
             self.get_umc_url()
             return True
-
+       
     def click_edit(self) -> None:
         """
         This method clicks the edit button.

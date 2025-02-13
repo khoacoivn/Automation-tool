@@ -10,7 +10,7 @@ from Activity.umc_actions import (
     deactivate_ra,
     check_inactive,
     add_role_umc,
-    remove_role_umc
+    remove_role_umc,
 )
 
 

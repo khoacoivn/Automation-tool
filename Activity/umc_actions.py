@@ -255,6 +255,7 @@ def deactivate_ra(umc_page: umc, hr_code:str) -> bool:
     # Click deactive button
     return umc_page.click_deactivate()
 
+
 def check_inactive(umc_page: umc, hr_code:str) -> bool:
     umc_page.search_hrid(hrid=hr_code)
     # Get account Status before running

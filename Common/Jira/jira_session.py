@@ -1,4 +1,6 @@
 from requests import Response
+from string import Template
+import json
 from Common.Jira.jira_ticket import JiraTicket
 from Common.Jira.jira_ticket_list import JiraTicketList
 from Common.Jira.session_request import Session
@@ -25,20 +27,24 @@ class JiraSession(Session):
     _BROWSE_TICKET = "issue/"
     _JQL_SEARCH = "search?jql="
     _TRANSITION = "issue/{ticket_key}/transitions"
+    _COMMENT = "issue/{ticket_key}/comment"
 
     # BODY TEMPLATE FOR JIRA API
-    _TRANSITION_BODY = """
+    _TRANSITION_BODY = Template("""
     { 
-
         "transition":{
-         "id":"{transition_id}"
-        },
-        "fields":{
-            {fields_info}
+         "id":"${transition_id}"
         }
     }
-    """
+    """)
 
+    _COMMENT_BODY = Template(
+        """{
+            "body":"${message}"
+        }
+        """
+    )
+    
     # This might range from browsing ticket, searching ticket to commit various workflow.
 
     def browse_ticket(self, ticket_key: str) -> JiraTicket:
@@ -91,7 +97,7 @@ class JiraSession(Session):
         result = self.get_request(endpoint=endpoint)
         return get_id_from_response(result)
     
-    def send_transition(self, ticket_key: str, transition_id: str, fields_info: str = ""):
+    def send_transition(self, ticket_key: str, transition_id: str):
         """
         Sends a transition request to the JIRA server.
 
@@ -106,7 +112,35 @@ class JiraSession(Session):
 
         endpoint = self._TRANSITION.format(ticket_key=ticket_key)
 
-        payload = self._TRANSITION_BODY.format(transition_id=transition_id, fields_info=fields_info)
+        #payload = self._TRANSITION_BODY.format(transition_id=transition_id, fields_info=fields_info)
+        payload = json.loads(self._TRANSITION_BODY.substitute(transition_id=transition_id))
 
         result = self.post_request(endpoint=endpoint, payload=payload)
         return result
+
+    def add_comment(self, ticket_key: str, message: str):
+        """
+        Input a comment to the designated ticket
+        
+        Params:
+            ticket_key (str): the key of the ticket that need to input comment
+            message (str): Message that needed to be input
+        
+        Returns:
+            result: The result of add comment request
+        """
+        endpoint = self._COMMENT.format(ticket_key=ticket_key)
+        
+        # Using json loads parse the text string into a valid JSON object that Jira Server can understand, avoid having response 400 
+        payload = json.loads(self._COMMENT_BODY.substitute(message=message))
+        
+        result = self.post_request(endpoint=endpoint, payload=payload)
+        return result
+        
+    def extract_comment(self, ticket_key: str):
+        """
+        Extract all comment of the designated ticket
+
+        Args:
+            ticket_key (str): _description_
+        """

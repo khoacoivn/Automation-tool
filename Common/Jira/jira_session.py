@@ -3,7 +3,7 @@ from string import Template
 import json
 from Common.Jira.session_request import Session
 from Common.constant.jira_constant import JiraConst
-from Common.supporting import filter_id_from_response, filter_linked_tickets_from_response
+from Common.supporting import filter_id_from_response
 
 
 class JiraSession(Session):
@@ -360,7 +360,7 @@ class JiraTicket:
         Returns:
             str: _description_
         """
-        return self.ticket_data[""]
+        return self.ticket_data["fields"][JiraConst.customfield.EDIT_ACCOUNT_OPTION]['value']
     
     def get_linked_ticket_id(self) -> list[str]:
         return_list = []

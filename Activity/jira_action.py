@@ -22,6 +22,7 @@ def general_request_reqdata_SINGLE(jira_session: JiraSession, origin_ticket_key:
         )
     affected_account = origin_ticket_data.get_affected_account_username()
     approval_id_list = origin_ticket_data.get_linked_ticket_id()
+    role_option = origin_ticket_data.get_edit_account_option()
     return_list = []
     for id in approval_id_list:
         ticket_data = jira_session.browse_ticket(ticket_key=id, param1="resolution", param2="summary")

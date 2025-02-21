@@ -3,6 +3,7 @@ from string import Template
 import json
 from Common.Jira.session_request import Session
 from Common.constant.jira_constant import JiraConst
+from Common.supporting import filter_id_from_response, filter_linked_tickets_from_response
 
 
 class JiraSession(Session):
@@ -78,9 +79,9 @@ class JiraSession(Session):
         """
         endpoint = self._BROWSE_TICKET.format(ticket_key=ticket_key)
         if kwargs:
-            #endpoint = self._BROWSE_TICKET.format(ticket_key=ticket_key) + self._GENERAL_PARAM.format(param=params)
             for value in kwargs.values():
                 endpoint = endpoint + self._GENERAL_PARAM.format(param=value) + "&"
+            # By adding ? in the _GENERAL_PARAM, it's required to remove the excess ? in the API request cURL
             endpoint = endpoint.replace("&?", "&")
         else:
             endpoint = self._BROWSE_TICKET.format(ticket_key=ticket_key)
@@ -119,7 +120,7 @@ class JiraSession(Session):
         endpoint = self._TRANSITION.format(ticket_key=ticket_key)
 
         result = self.get_request(endpoint=endpoint)
-        return self.filter_id_from_response(result)
+        return filter_id_from_response(result)
     
     def get_linked_ticket_id(self, ticket_key: str) -> list[str]:
         """
@@ -136,7 +137,7 @@ class JiraSession(Session):
         
         response = self.get_request(endpoint=endpoint)
         
-        result = self.filter_linked_tickets_from_response(response)
+        result = filter_linked_tickets_from_response(response)
         
         for key in result.keys():
             approval_id_list.append(str(key))
@@ -267,46 +268,6 @@ class JiraSession(Session):
         payload = json.loads(payload)
         result = self.post_request(endpoint=endpoint, payload=payload)
         return result
-    
-    def filter_id_from_response(self, response: Response) -> dict:
-        """This function is to support getting the ID from the response of the API
-
-        Args:
-            response (Response): Response from the API
-
-        Returns:
-            dict: ID from the response
-        """
-        return_dict = {}
-
-        try:
-            json_obj = json.loads(response.text)
-            for fields in json_obj['transitions']:
-                return_dict[fields['name']] = fields['id']
-            return return_dict
-        except Exception as e:  # noqa: E722
-            print("File Error, file not found!\n")
-            print(e)
-            return {}  # Return an empty dictionary if an exception occurs
-        
-    def filter_linked_tickets_from_response(self, response: Response) -> dict:
-        """This function is to support getting the linked ticket ID & it's summary from the response of the API
-
-        Args:
-            response (Response): Response from the API
-
-        Returns:
-            dict: {ID - Summary} - Example: {APPROVALVN-12313 - Approval for SRVN}
-        """
-        return_dict = {}
-        try:
-            json_obj = json.loads(response.text)
-            for fields in json_obj['fields']['issuelinks']:
-                return_dict[fields['outwardIssue']['key']] = fields['outwardIssue']['fields']['summary']
-            return return_dict
-        except Exception as e:  # noqa: E722
-            print(e)
-            return {}
     
 #--------------------------------------------------------------------------------------------------------    
 class JiraTicket:

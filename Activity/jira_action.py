@@ -10,7 +10,7 @@ def general_request_reqdata_SINGLE(jira_session: JiraSession, origin_ticket_key:
         origin_ticket_key (str): ACCVN ticket, original to child approval tickets
 
     Returns:
-        list: List of approved ticket & Role Name - Example: 
+        list: List of approved ticket & Role Name - Example:
     """
     affected_account = jira_session.get_affected_account_username(ticket_key=origin_ticket_key)
     approval_id_list = jira_session.get_linked_ticket_id(ticket_key=origin_ticket_key)
@@ -19,7 +19,8 @@ def general_request_reqdata_SINGLE(jira_session: JiraSession, origin_ticket_key:
         ticket_data = jira_session.browse_ticket(ticket_key=id, param1="resolution", param2="summary")
         # This IF will filter out the ticket that been declined
         if ticket_data.get_resolution() == "Resolved":
-            return_list.append(ticket_data.get_summary() + " - " + affected_account)
+            return_list.append(ticket_data.get_summary() + " - " + "Approved" + " - " + affected_account)
         else:
-            continue
+            return_list.append(ticket_data.get_summary() + " - " + "Declined" + " - " + affected_account)
     return return_list
+

@@ -1,5 +1,6 @@
 from Sites.umc import umc
 from Common.constant.error_message import ErrorMessage
+from selenium.common.exceptions import NoSuchElementException
 import pandas as pd
 import time
 
@@ -60,8 +61,8 @@ def add_homesis_homesis_user(umc_page: umc, hr_code: str) -> bool:
         umc_page.verify_updated_role()
     return umc_page.verify_updated_role()
 
-def add_role_umc(umc_page: umc, login_name: str, role_list:list) -> bool:
 
+def add_role_umc(umc_page: umc, login_name: str, role_list: list) -> bool:
     umc_page.search_hrid(hrid=login_name)
     # Get account Status before running
     umc_page.get_search_account_status()
@@ -86,8 +87,8 @@ def add_role_umc(umc_page: umc, login_name: str, role_list:list) -> bool:
         umc_page.verify_updated_role()
     return umc_page.verify_updated_role()
 
-def remove_role_umc(umc_page: umc, login_name: str, role_list:list) -> bool:
 
+def remove_role_umc(umc_page: umc, login_name: str, role_list: list) -> bool:
     umc_page.search_hrid(hrid=login_name)
     # Get account Status before running
     umc_page.get_search_account_status()
@@ -111,6 +112,7 @@ def remove_role_umc(umc_page: umc, login_name: str, role_list:list) -> bool:
         # Check if Update sucessfully
         umc_page.verify_updated_role()
     return umc_page.verify_updated_role()
+
 
 def deactivate_user_with_reason(umc_page: umc, hr_code: str, reason: str) -> bool:
     """This is a funciton to clear user of all roles and add in only the dismissal role.
@@ -185,7 +187,7 @@ def reactivate_user(umc_page: umc, hr_code: str) -> bool:
             if umc_page.select_owned_role(role=dismissal):
                 umc_page.click_remove_role()
 
-        #Add Homesis and HOMESIS_USER role
+        # Add Homesis and HOMESIS_USER role
         umc_page.select_role("HOMESIS")
         umc_page.click_add_role()
         umc_page.select_role("HOMESIS_USER")
@@ -197,7 +199,8 @@ def reactivate_user(umc_page: umc, hr_code: str) -> bool:
         # Remove Successful or not. Return TRUE if Updated Successfully
         return umc_page.verify_updated_role
 
-def remove_role(umc_page: umc, hr_code:str, role:str) -> bool:
+
+def remove_role(umc_page: umc, hr_code: str, role: str) -> bool:
     """
     Removes a specified role from a user in the UMC page.
 
@@ -213,7 +216,7 @@ def remove_role(umc_page: umc, hr_code:str, role:str) -> bool:
     Returns:
         bool: True if the role was successfully removed, False otherwise.
     """
-    
+
     umc_page.search_hrid(hrid=hr_code)
     # Get account Status before running
     umc_page.get_search_account_status()
@@ -232,10 +235,11 @@ def remove_role(umc_page: umc, hr_code:str, role:str) -> bool:
 
         # Check if Update sucessfully
         umc_page.verify_updated_role()
-    
+
     return umc_page.verify_updated_role()
 
-def deactivate_ra(umc_page: umc, hr_code:str) -> bool:
+
+def deactivate_ra(umc_page: umc, hr_code: str) -> bool:
     """_Deactive a specific RA account in UMC page
 
     Args:
@@ -256,7 +260,7 @@ def deactivate_ra(umc_page: umc, hr_code:str) -> bool:
     return umc_page.click_deactivate()
 
 
-def check_inactive(umc_page: umc, hr_code:str) -> bool:
+def check_inactive(umc_page: umc, hr_code: str) -> bool:
     umc_page.search_hrid(hrid=hr_code)
     # Get account Status before running
     umc_page.get_search_account_status()
@@ -266,3 +270,32 @@ def check_inactive(umc_page: umc, hr_code:str) -> bool:
         return False
     else:
         return True
+
+
+def update_phone_number(umc_page: umc, hr_code: str, phone_number: str) -> bool:
+    list_of_error = []
+    umc_page.search_hrid(hrid=hr_code)
+    # Get account Status before running
+    if umc_page.get_search_account_status():
+        # Check if account is Inactive
+        if umc_page.get_search_account_status() == "Inactive":
+            list_of_error.append(hr_code + " - " + ErrorMessage.umc_message.USER_INACTIVE)
+            return list_of_error
+        if umc_page.get_search_account_status() == "Active":
+            # Click to detail
+            umc_page.click_details_button()
+            # Click to edit
+            umc_page.click_edit()
+            # Replace phone number
+            umc_page.update_phone(phone_number=phone_number)
+            # Clicking Save
+            umc_page.click_save()
+            # Check if Update successfully
+            umc_page.verify_updated_info()
+    else:
+        list_of_error.append(hr_code + "-" + ErrorMessage.umc_message.USER_NOT_FOUND)
+        return list_of_error
+        pass
+    return list_of_error
+
+

@@ -11,15 +11,44 @@ from Activity.umc_actions import (
     check_inactive,
     add_role_umc,
     remove_role_umc,
+    update_phone_number
 )
 
 
 def main():
+    # Title of the page
+    st.title("UMC AUTOMATION HUB")
     """
     This script is used for automating user account activation, deactivation, and reactivation in UMC (User Management Console).
     It utilizes the Streamlit library for creating a user interface and Selenium for interacting with the UMC web application.
     The script allows the user to input LDAP credentials, upload a CSV file containing HR codes or login names, and perform various actions on the user accounts.
     The available actions include activating accounts, deactivating accounts with a chosen reason, and reactivating accounts.
+    """
+    # Username & Password Input
+    ldap_user = st.text_input("LDAP USERNAME")
+    ldap_pw = st.text_input("LDAP PASSWORD", type="password")
+
+    # Choose action to take on BSL
+    st.subheader("Choose your action on UMC", divider="red")
+
+    tab1, tab2, tab3, tab4 = st.tabs(["Deactivate/Reactive", "Add/Remove Role", "Check status", "Update Info"])
+
+    with tab1:
+        tab1_exec(ldap_user, ldap_pw)
+    with tab2:
+        tab2_exec(ldap_user, ldap_pw)
+    with tab3:
+        tab3_exec(ldap_user, ldap_pw)
+    with tab4:
+        tab4_exec(ldap_user, ldap_pw)
+    pass
+
+def tab1_exec(ldap_user: str, ldap_pw: str):
+    """tab1_exec execute Deactivate LDAP account
+
+        Args:
+            username (str): str value of login name
+            password (str): str value of password
     """
 
     # Radio button options
@@ -39,9 +68,6 @@ def main():
         "Remove all roles + Add SALES_AGENT_AF_DEACTIVE",
     ]
 
-    # Username & Password Input
-    ldap_user = st.text_input("LDAP USERNAME")
-    ldap_pw = st.text_input("LDAP PASSWORD", type="password")
 
     # List HR Code/Login Name Input
     csv_upload = st.file_uploader(
@@ -149,10 +175,59 @@ def main():
             deactivate_ra(umc_page=umc_page, hr_code=hr_code)
             umc_page.get_umc_url()
 
+
+def tab2_exec(ldap_user: str, ldap_pw: str):
+    st.divider()
+    st.subheader("Add role for multiple user")
+    left, rigth = st.columns(2, vertical_alignment="top")
+    login_name_input_area = left.text_area("Input login name here")
+    login_name_input_area_list = login_name_input_area.split("\n")  # This return a list
+    role_umc_input_area = rigth.text_area("Input roles here")
+    role_umc_input_area_list = role_umc_input_area.split("\n")  # This return a list
+    add_role_umc_btn = st.button("Add roles UMC", type="primary")
+
+    if add_role_umc_btn:
+        # Start Selenium
+        umc_page = login_to_site(ldap_user=ldap_user, ldap_pw=ldap_pw)
+
+        for index in range(len(login_name_input_area_list)):
+            login_name = login_name_input_area_list[index]
+            add_role_umc(
+                umc_page=umc_page,
+                login_name=login_name,
+                role_list=role_umc_input_area_list,
+            )
+
+            umc_page.get_umc_url()
+
+    st.divider()
+    st.subheader("Remove role for multiple user")
+    left, rigth = st.columns(2, vertical_alignment="top")
+    login_name_input_area = left.text_area("Input login name to remove here")
+    login_name_input_area_list = login_name_input_area.split("\n")  # This return a list
+    role_umc_input_area = rigth.text_area("Input remove roles here")
+    role_umc_input_area_list = role_umc_input_area.split("\n")  # This return a list
+    remove_role_umc_btn = st.button("Remove roles UMC", type="primary")
+
+    if remove_role_umc_btn:
+        # Start Selenium
+        umc_page = login_to_site(ldap_user=ldap_user, ldap_pw=ldap_pw)
+
+        for index in range(len(login_name_input_area_list)):
+            login_name = login_name_input_area_list[index]
+            remove_role_umc(
+                umc_page=umc_page,
+                login_name=login_name,
+                role_list=role_umc_input_area_list,
+            )
+
+            umc_page.get_umc_url()
+
+def tab3_exec(ldap_user: str, ldap_pw: str):
     # check active account UMC
     st.divider()
     st.text("Check status account UMC")
-    hr_code_input_area = st.text_area("Input Hr code here")
+    hr_code_input_area = st.text_area("Input Hr code or HCG here")
     hr_code_input_area_lines = hr_code_input_area.split(
         "\n"
     )  # This return a list of text area value
@@ -185,56 +260,44 @@ def main():
         left.write(data_user_status)
         data_user_status_inactive = data_user_status[
             data_user_status["Status"] == "Inactive"
-        ]
+            ]
         rigth.subheader(":red[Inactive user]")
         rigth.write(data_user_status_inactive)
+    pass
 
-    st.divider()
-    st.subheader("Add role for multiple user")
-    left, rigth = st.columns(2, vertical_alignment="top")
-    login_name_input_area = left.text_area("Input login name here")
-    login_name_input_area_list = login_name_input_area.split("\n")  # This return a list
-    role_umc_input_area = rigth.text_area("Input roles here")
-    role_umc_input_area_list = role_umc_input_area.split("\n")  # This return a list
-    add_role_umc_btn = st.button("Add roles UMC", type="primary")
+def tab4_exec(ldap_user: str, ldap_pw: str):
+    # List HR Code/Login Name Input
+    csv_upload = st.file_uploader(
+        label="HR Code/Login Name List",
+        type=["csv", "txt"],
+        accept_multiple_files=False,
+    )
+    # Read CSV Data
+    if csv_upload is not None:
+        csv_data = pd.read_csv(csv_upload, converters={"HR Code": str, "Phone": str})
+        result_table = st.write(csv_data)
 
-    if add_role_umc_btn:
+    # Create columns for update UMC info
+    active_col, _, reactive_col = st.columns(3)
+
+    # Phone Button on the left Column
+    update_phone_button = active_col.button("Update phone")
+
+    # Update info account UMC
+    if update_phone_button:
         # Start Selenium
         umc_page = login_to_site(ldap_user=ldap_user, ldap_pw=ldap_pw)
-
-        for index in range(len(login_name_input_area_list)):
-            login_name = login_name_input_area_list[index]
-            add_role_umc(
+        # Loop through CSV & Search for HR Code
+        for index, row in csv_data.iterrows():
+            hr_code = row["HR Code"]
+            phone_number = row["Phone"]
+            update_phone_number(
                 umc_page=umc_page,
-                login_name=login_name,
-                role_list=role_umc_input_area_list,
+                hr_code=hr_code,
+                phone_number=phone_number
             )
-            
             umc_page.get_umc_url()
-    
-    st.divider()
-    st.subheader("Remove role for multiple user")
-    left, rigth = st.columns(2, vertical_alignment="top")
-    login_name_input_area = left.text_area("Input login name to remove here")
-    login_name_input_area_list = login_name_input_area.split("\n")  # This return a list
-    role_umc_input_area = rigth.text_area("Input remove roles here")
-    role_umc_input_area_list = role_umc_input_area.split("\n")  # This return a list
-    remove_role_umc_btn = st.button("Remove roles UMC", type="primary")
-
-    if remove_role_umc_btn:
-        # Start Selenium
-        umc_page = login_to_site(ldap_user=ldap_user, ldap_pw=ldap_pw)
-
-        for index in range(len(login_name_input_area_list)):
-            login_name = login_name_input_area_list[index]
-            remove_role_umc(
-                umc_page=umc_page,
-                login_name=login_name,
-                role_list=role_umc_input_area_list,
-            )
-            
-            umc_page.get_umc_url()
-
+    pass
 
 if __name__ == "__main__":
     main()

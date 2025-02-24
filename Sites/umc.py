@@ -1,4 +1,5 @@
 import logging
+from selenium.common.exceptions import NoSuchElementException
 from Common.page_object import page_object as Page
 
 
@@ -27,7 +28,6 @@ class umc(Page):
     detail_button = '//*[contains(text(),"Detail")]'
     block_button = '//button//*[contains(text(),"Block")]'
     deactivate_button = '//button//*[contains(text(),"Deactivate")]'
-    reactivate_button = '//button//*[contains(text(),"Activate")]'
     edit_button = '//button//*[contains(text(),"Edit")]'
     search_result_status = '//div[@data-better-uid="search-results:status"]'
 
@@ -37,6 +37,8 @@ class umc(Page):
     add_role_button = '//button[contains(@class,"add")]'
     remove_role_button = '//button[contains(@class,"remove")]'
     account_status_field = '//div[@data-better-uid="status"]'
+    detail_phone = '//*[@data-better-uid="detail.phone"]'
+    detail_mobile = '//*[@data-better-uid="detail.mobile"]'
 
     role_palette = '//*[@data-better-uid="role-palette"]'
     first_owned_role = '//*[@data-better-uid="role-palette:selected-field"]/option'
@@ -96,7 +98,11 @@ class umc(Page):
         """
         This method clicks the details button.
         """
+
         self.search_by_xpath(self.detail_button).click()
+
+
+
 
     def click_block_button(self) -> bool:
         """
@@ -127,7 +133,7 @@ class umc(Page):
         else:
             self.get_umc_url()
             return True
-       
+
     def click_edit(self) -> None:
         """
         This method clicks the edit button.
@@ -231,6 +237,20 @@ class umc(Page):
             return ("has been updated" in text)
         return False
 
+    def verify_updated_info(self) -> bool:
+        """
+        This method verifies if the info is updated.
+
+        Returns:
+            bool: True if the role is updated, False otherwise.
+        """
+        updated_notif = self.search_by_xpath(self.feedback_panel)
+
+        if updated_notif.flag:
+            text = updated_notif.return_element().text
+            return ("has been updated" in text)
+        return False
+
     def select_role(self, role: str) -> bool:
         """
         This method selects a role.
@@ -260,3 +280,20 @@ class umc(Page):
         xpath = self.owned_role_prefixed + role_suffix
         owned_role = self.search_by_xpath(xpath=xpath)
         return owned_role.click()
+
+    def update_phone(self, phone_number: str) -> bool:
+        """
+        This method selects phone/mobile
+        clear old phone and send new phone number
+        """
+        # Chose detail phone and input new value
+        phone_number_field = self.search_by_xpath(xpath=self.detail_phone)
+        phone_number_field.click()
+        phone_number_field.clearText()
+        phone_number_field.send_keys(phone_number)
+        # Chose detail Mobile and input new value
+        mobile_number_field = self.search_by_xpath(xpath=self.detail_mobile)
+        mobile_number_field.click()
+        mobile_number_field.clearText()
+        mobile_number_field.send_keys(phone_number)
+

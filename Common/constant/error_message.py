@@ -11,3 +11,4 @@ class ErrorMessage:
 
     class umc_message:
         USER_INACTIVE = "is inactive"
+        USER_NOT_FOUND = "is not found"

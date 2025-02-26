@@ -236,22 +236,16 @@ def tab3_exec(ldap_user: str, ldap_pw: str):
     if check_status_btn:
         # Start Selenium
         umc_page = login_to_site(ldap_user=ldap_user, ldap_pw=ldap_pw)
+        data_user_status_list = []
         # Initial dataframe saving user status
         data_user_status = pd.DataFrame(columns=["Hr Code", "Status"])
+        for hr_code in hr_code_input_area_lines:
+            status = check_inactive(umc_page=umc_page, hr_code=hr_code)
+            data_user_status_list.append({"Hr Code": hr_code, "Status": status})  # Add to the list
+            umc_page.get_umc_url()  # Move outside the loop if it doesn't depend on hr_code
 
-        # Loop through list of user input in text area
-        for index in range(len(hr_code_input_area_lines)):
-            hr_code = hr_code_input_area_lines[index]
-            # check if user is inactive
-            if check_inactive(umc_page=umc_page, hr_code=hr_code) == False:
-                data_user_status = data_user_status._append(
-                    {"Hr Code": hr_code, "Status": "Inactive"}, ignore_index=True
-                )
-            else:
-                data_user_status = data_user_status._append(
-                    {"Hr Code": hr_code, "Status": "Active"}, ignore_index=True
-                )
-            umc_page.get_umc_url()
+        # Create the DataFrame *outside* the loop (only once):
+        data_user_status = pd.DataFrame(data_user_status_list)  # <--- DataFrame created here
 
         # display result
         left, rigth = st.columns(2, vertical_alignment="top")
@@ -263,7 +257,7 @@ def tab3_exec(ldap_user: str, ldap_pw: str):
             ]
         rigth.subheader(":red[Inactive user]")
         rigth.write(data_user_status_inactive)
-    pass
+
 
 def tab4_exec(ldap_user: str, ldap_pw: str):
     # List HR Code/Login Name Input

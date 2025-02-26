@@ -260,17 +260,16 @@ def deactivate_ra(umc_page: umc, hr_code: str) -> bool:
     return umc_page.click_deactivate()
 
 
-def check_inactive(umc_page: umc, hr_code: str) -> bool:
+def check_inactive(umc_page: umc, hr_code: str) -> str:
     umc_page.search_hrid(hrid=hr_code)
     # Get account Status before running
-    umc_page.get_search_account_status()
-
-    # Check if account is Inactive
-    if umc_page.get_search_account_status() == "Inactive":
-        return False
-    else:
-        return True
-
+    status = umc_page.get_search_account_status()  # Store the status
+    if status == "Inactive":
+        return "Inactive"
+    elif status == "Active":  # Use elif for efficiency
+        return "Active"
+    elif status == "Account not found":
+        return "Not Found"
 
 def update_phone_number(umc_page: umc, hr_code: str, phone_number: str) -> bool:
     """Updates the phone number and returns a list of error/success messages."""
@@ -314,7 +313,7 @@ def update_name(umc_page: umc, hr_code: str, first_name: str, last_name: str) ->
             umc_page.click_details_button()
             # Click to edit
             umc_page.click_edit()
-            # Replace name
+            # Replace first name and last name
             umc_page.update_name(first_name=first_name, last_name=last_name)
             # Clicking Save
             umc_page.click_save()

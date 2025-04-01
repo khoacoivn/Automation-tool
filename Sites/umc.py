@@ -28,6 +28,7 @@ class umc(Page):
     detail_button = '//*[contains(text(),"Detail")]'
     block_button = '//button//*[contains(text(),"Block")]'
     deactivate_button = '//button//*[contains(text(),"Deactivate")]'
+    activate_button = '//button//*[contains(text(),"Activate")]'
     edit_button = '//button//*[contains(text(),"Edit")]'
     search_result_status = '//div[@data-better-uid="search-results:status"]'
 
@@ -129,6 +130,20 @@ class umc(Page):
             bool: False if the button is clicked, True otherwise.
         """
         button = self.search_by_xpath(self.deactivate_button)
+        if button.flag:
+            button.click()
+            return False
+        else:
+            self.get_umc_url()
+            return True
+
+    def click_activate(self) -> bool:
+        """This method clicks the activate button
+
+        Returns:
+            bool: status of the action
+        """
+        button = self.search_by_xpath(self.activate_button)
         if button.flag:
             button.click()
             return False

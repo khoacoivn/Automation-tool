@@ -331,34 +331,69 @@ def tab5_exec():
     st.divider()
     st.subheader("Reactivate accounts on UMC")
     
-    
     reactivate_upload = st.file_uploader(
     label="Reactivate HRcode List",
-    type=["csv", "txt"],
+    type=["csv"],
     accept_multiple_files=False,
     )
 
     if reactivate_upload is not None:
+        # Show 5 rows of data on screen
+        data = pd.read_csv(reactivate_upload, converters={"HRcode": str})
+        st.subheader("First 5 rows", help="Please check the HR Code to make sure you are running the correct file")
+        st.write(data.head(5))
+        # Initialize Session State to properly perform nested button
+        if 'getOTP_clicked' not in st.session_state:
+            st.session_state['getOTP_clicked'] = False
+        if 'confirmOTP_clicked' not in st.session_state:
+            st.session_state['confirmOTP_clicked'] = False
+        if 'timeOTP' not in st.session_state:
+            st.session_state['timeOTP'] = None
+            
+        # Building FrontEnd Button to get OTP
         getOTP = st.button("Get OTP", use_container_width=True)
         if getOTP:
-            cred = cyberark_get_credential_password("umc_admin", "6b14c3c96dc592c364f5a3ef642db09195550cb6")
-            st.write(cred)
-    #     if st.session_state.get('button') is not True:
-    #         st.session_state['button'] = getOTP
-    #     if st.session_state['button'] is True:
-    #         # Trigger OTP Generation
-    #         timeOTP = generate_OTP()
-    #         # Release front end verification for SD users
-    #         col1, col2 = st.columns([1,2], vertical_alignment="bottom")
-    #         with col1:
-    #             OTP = st.text_input("Verify OTP")
-    #         with col2:
-    #             confirm = st.button("Confirm OTP")
+            st.session_state['getOTP_clicked'] = True
+            
+        if st.session_state['getOTP_clicked'] and getOTP:
+            # Trigger OTP Generation
+            st.session_state['timeOTP'] = generate_OTP()
+            
+        # Display OTP verification input if OTP was generated
+        if st.session_state['getOTP_clicked']:
+            #Building FrontEnd OTP Verification
+            col1, col2 = st.columns([1,2], vertical_alignment="bottom")
+            with col1:
+                OTP  = st.text_input("Verify OTP")
+            with col2:
+                confirm = st.button("Confirm OTP")
+            if confirm:
+                st.session_state['confirmOTP_clicked'] = True
+                result = verify_OTP(sourceOTP=st.session_state['timeOTP'], OTP=OTP)
+                if not result:
+                    st.write("OTP failed to verify!")
+                    
+                    #Reset session state after function complete
+                    st.session_state['getOTP_clicked'] = False
+                    st.session_state['confirmOTP_clicked'] = False
+                    st.session_state['timeOTP'] = None
+            
+            # Run Reactivate Scripts if the verification returns valid       
+            if st.session_state['confirmOTP_clicked'] and result is True:
+                st.write("OTP validated! Script will run now")
                 
-    #         # When user presses confirm
-    #         if confirm:
-    #             st.write(str(verify_OTP(timeOTP, OTP=OTP)))
-    #             # st.session_state['button'] = False
+                # Trigger request to CBA Vault to get UMC password
+                cred = cyberark_get_credential_password("umc_admin", "6b14c3c96dc592c364f5a3ef642db09195550cb6")
+                umc_page = login_to_site(ldap_user="umc_admin1", ldap_pw=cred)
+                table_of_error = pd.DataFrame(columns=["Hr Code", "Steps"])
+                log_left, log_right = st.columns([0.4, 0.6], vertical_alignment="top", gap="large")
+                for row in data.iterrows():
+                    
+                    
+                #Reset session state after function complete
+                st.session_state['getOTP_clicked'] = False
+                st.session_state['confirmOTP_clicked'] = False
+                st.session_state['timeOTP'] = None
 
 
 if __name__ == "__main__":

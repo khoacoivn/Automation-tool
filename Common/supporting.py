@@ -110,8 +110,7 @@ def cyberark_get_credential_password(requestCredential: str, certThumbprint: str
     except Exception as e:
         print(e)
         return ""
-    return result
-
+    
 def powershell_run_output(script_path:str) -> str:
     """This function to run Powershell cmd - return output
 
@@ -123,8 +122,7 @@ def powershell_run_output(script_path:str) -> str:
     """
     from subprocess import run
     try:
-        completed = run(["powershell", "-File", script_path], capture_output=True)
-        print(completed.stdout) 
+        completed = run(["powershell", "-File", script_path], capture_output=True, encoding="utf-8")
         return str(completed.stdout)
     except Exception as e:
         print(e)
@@ -137,7 +135,7 @@ def generate_OTP() -> TOTP:
         str: the generated OTP
     """
     try:
-        timeOTP = TOTP('base32secret3232', interval=420)
+        timeOTP = TOTP('base32secret3232', interval=600)
         
         #Assign the Power Automate Webhook
         webhook = TeamsWebhook("https://prod-102.westeurope.logic.azure.com:443/workflows/622b616dc2a9428e9dfa90b97df7a5c2/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=7J64W7hby4vALfHoRosepx0voq-jJd-KB0Nzepfgu0Y")

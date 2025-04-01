@@ -11,6 +11,7 @@ $certPath = "Cert:\CurrentUser\My\" + $certThumbprint
 $myCert = Get-ChildItem -Path $certPath
 #Write-Host = $myCert
 $uriString = "https://" + $CCPHost + "/AIMWebService/api/Accounts?AppID=" + $appID + "&Query=Safe=" + $safe + ";Object=" + $accountObject
-$content = Invoke-RestMethod -Method Get -Uri $uriString -ContentType application/json -Certificate $myCert
+$content = Invoke-RestMethod -Method Get -Uri $uriString -ContentType application/json -Certificate $myCert | ConvertTo-Json
+$cred = ($content | ConvertFrom-Json).Content
 
-Write-Host $content
+Write-Host $cred

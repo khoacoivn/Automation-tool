@@ -4,14 +4,16 @@ from Activity.umc_actions import (
     login_to_site,
     add_homesis_homesis_user,
     deactivate_user_with_reason,
-    reactivate_user,
+    sales_reactivate,
     remove_role,
     roles_table,
     deactivate_ra,
     check_inactive,
     add_role_umc,
     remove_role_umc,
-    update_phone_number, update_name
+    update_phone_number,
+    update_name,
+    reactivate_account
 )
 
 from Common.supporting import (
@@ -117,7 +119,7 @@ def tab1_exec(ldap_user: str, ldap_pw: str):
     # Read CSV Data
     if csv_upload is not None:
         csv_data = pd.read_csv(csv_upload, converters={"HR Code": str})
-        result_table = st.write(csv_data)
+        st.write(csv_data)
 
     # Activate Account
     if active_account_button:
@@ -153,7 +155,7 @@ def tab1_exec(ldap_user: str, ldap_pw: str):
         for index, row in csv_data.iterrows():
             hr_code = row["HR Code"]
             reason = options[options.index(deact_reason)]
-            reactivate_user(umc_page=umc_page, hr_code=hr_code)
+            sales_reactivate(umc_page=umc_page, hr_code=hr_code)
             umc_page.get_umc_url()
 
     if remove_dismissal_button:
@@ -275,7 +277,7 @@ def tab4_exec(ldap_user: str, ldap_pw: str):
     # Read CSV Data
     if csv_upload is not None:
         csv_data = pd.read_csv(csv_upload, converters={"HR Code": str, "Phone": str})
-        result_table = st.write(csv_data)
+        st.write(csv_data)
 
     # Create columns for update UMC info
     update_phone_col, _, update_name_button_col = st.columns(3)
@@ -381,20 +383,23 @@ def tab5_exec():
             # Run Reactivate Scripts if the verification returns valid       
             if st.session_state['confirmOTP_clicked'] and result is True:
                 st.write("OTP validated! Script will run now")
-                
+                from time import sleep
                 # Trigger request to CBA Vault to get UMC password
                 cred = cyberark_get_credential_password("umc_admin", "6b14c3c96dc592c364f5a3ef642db09195550cb6")
+                sleep(5)
                 umc_page = login_to_site(ldap_user="umc_admin1", ldap_pw=cred)
-                table_of_error = pd.DataFrame(columns=["Hr Code", "Steps"])
-                log_left, log_right = st.columns([0.4, 0.6], vertical_alignment="top", gap="large")
-                for row in data.iterrows():
-                    
-                    
+                # table_of_error = pd.DataFrame(columns=["Hr Code", "Steps"])
+                # log_left, log_right = st.columns([0.4, 0.6], vertical_alignment="top", gap="large")
+                for row in data['HRcode']:
+                    reactivation_status = reactivate_account(umc_page=umc_page, hr_code=row)
+                    if reactivation_status is False:
+                        st.write(row + ": Reactivation Failed")
+                    umc_page.get_umc_url()
                 #Reset session state after function complete
                 st.session_state['getOTP_clicked'] = False
                 st.session_state['confirmOTP_clicked'] = False
                 st.session_state['timeOTP'] = None
-
+                st.session_state.clear()
 
 if __name__ == "__main__":
     main()

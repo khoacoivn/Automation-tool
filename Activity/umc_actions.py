@@ -151,7 +151,7 @@ def deactivate_user_with_reason(umc_page: umc, hr_code: str, reason: str) -> boo
         return umc_page.verify_updated_role()
 
 
-def reactivate_user(umc_page: umc, hr_code: str) -> bool:
+def sales_reactivate(umc_page: umc, hr_code: str) -> bool:
     """This is a funciton to clear user of all dismissal roles and add in HOMESIS and HOMESIS_USER.
 
     Args:
@@ -181,8 +181,6 @@ def reactivate_user(umc_page: umc, hr_code: str) -> bool:
         # Add Homesis and HOMESIS_USER role
         umc_page.select_role("HOMESIS")
         umc_page.click_add_role()
-        umc_page.select_role("HOMESIS_USER")
-        umc_page.click_add_role()
 
         # Clicking Save
         umc_page.click_save()
@@ -190,6 +188,7 @@ def reactivate_user(umc_page: umc, hr_code: str) -> bool:
         # Remove Successful or not. Return TRUE if Updated Successfully
         return umc_page.verify_updated_role()
 
+    return False
 
 def remove_role(umc_page: umc, hr_code: str, role: str) -> bool:
     """
@@ -349,11 +348,13 @@ def reactivate_account(umc_page: umc, hr_code: str) -> bool:
         # Account is found and not in Inactive status, start reactivate process
         try:
             umc_page.click_details_button()
-            
+            umc_page.click_activate()
             umc_page.click_edit()
-            
-            return True
-        except:
+            umc_page.select_role(role="NON_HOSEL_USER")
+            umc_page.click_add_role()
+            return umc_page.click_save()
+        except Exception as e:
+            print("Exception at: " + str(e))
             return False
     else:
         return True

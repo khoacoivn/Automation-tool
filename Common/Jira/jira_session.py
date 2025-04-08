@@ -362,8 +362,8 @@ class JiraTicket:
         """
         return self.ticket_data["fields"][JiraConst.customfield.EDIT_ACCOUNT_OPTION]['value']
     
-    def get_linked_ticket_id(self) -> list[str]:
-        return_list = []
-        for fields in self.ticket_data['fields']['issuelinks']:
-            return_list.append(fields['outwardIssue']['key'])
-        return return_list
+    # def get_linked_ticket_id(self) -> list[str]:
+    #     return_list = []
+    #     for fields in self.ticket_data['fields']['issuelinks']:
+    #         return_list.append(fields['outwardIssue']['key'])
+    #     return return_listo

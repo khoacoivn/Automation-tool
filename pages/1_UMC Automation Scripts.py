@@ -39,8 +39,8 @@ def main():
     # Choose action to take on UMC
     st.subheader("Choose your action on UMC", divider="red")
 
-    tab1, tab2, tab3, tab4, tab5 = st.tabs(
-        ["Deactivate/Reactive", "Add/Remove Role", "Check status", "Update Info", "Reactivate Accounts"])
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
+        ["Deactivate/Reactive", "Add/Remove Role", "Check status", "Update Info", "Reactivate Accounts", "Emergency Role Add"])
 
     with tab1:
         tab1_exec(ldap_user, ldap_pw)
@@ -52,6 +52,8 @@ def main():
         tab4_exec(ldap_user, ldap_pw)
     with tab5:
         tab5_exec()
+    with tab6:
+        tab6_exec()
     pass
 
 
@@ -403,8 +405,7 @@ def tab5_exec():
                 st.write("OTP validated! Script will run now")
                 from time import sleep
                 # Trigger request to CBA Vault to get UMC password
-                cred = cyberark_get_credential_password(
-                    requestCredential="umc_admin", certThumbprint="6b14c3c96dc592c364f5a3ef642db09195550cb6")
+                cred = cyberark_get_credential_password()
                 sleep(5)
                 umc_page = login_to_site(ldap_user="umc_admin1", ldap_pw=cred)
                 # table_of_error = pd.DataFrame(columns=["Hr Code", "Steps"])
@@ -417,6 +418,27 @@ def tab5_exec():
                     umc_page.get_umc_url()
                 # Reset session state after function complete
                 st.session_state.clear()
+
+
+def tab6_exec():
+    st.divider()
+    st.subheader("Reactivate accounts on UMC")
+
+    hr_code_text_area = st.text_area("Input Hr code or HCG here")
+    if hr_code_text_area is not None:
+        hr_code_input_area_lines = hr_code_text_area.split(
+            "\n"
+        )
+        emergency = st.button("Perform emergency add role", type="primary")
+        if emergency:
+            cred = cyberark_get_credential_password()
+            umc_page = login_to_site(ldap_user="umc_admin1", ldap_pw=cred)
+            for code in hr_code_input_area_lines:
+                add_role_status = add_role_umc(
+                    umc_page=umc_page, hr_code=code, role_list=["NON_HOSEL_USER"])
+                if add_role_status is False:
+                    st.write(code + ": Emergency add role Failed")
+                umc_page.get_umc_url()
 
 
 if __name__ == "__main__":

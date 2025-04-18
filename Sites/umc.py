@@ -74,13 +74,16 @@ class umc(Page):
         """
         if (ldap_user is not None) & (ldap_pw is not None):
             self.search_by_xpath(self.ldap_user_input,
-                                 delay=0.5).send_keys(ldap_user)
+                                 delay=1.5).send_keys(ldap_user)
             self.search_by_xpath(self.ldap_pw_input,
-                                 delay=0.5).send_keys(ldap_pw)
-            return self.search_by_xpath(self.login_button, delay=1.5).click()
+                                 delay=1.5).send_keys(ldap_pw)
+            return self.search_by_xpath(self.login_button, delay=3.5).click()
         else:
             logging.critical("Missing Username or Password.")
             return False
+
+    def stop(self) -> None:
+        self.end_process()
 
     def logout(self) -> None:
         """

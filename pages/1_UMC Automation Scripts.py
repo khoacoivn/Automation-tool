@@ -422,9 +422,9 @@ def tab5_exec():
 
 def tab6_exec():
     st.divider()
-    st.subheader("Reactivate accounts on UMC")
+    st.subheader("Emergency add role on UMC")
 
-    hr_code_text_area = st.text_area("Input Hr code or HCG here")
+    hr_code_text_area = st.text_area("Input Hr codes or HCGs")
     if hr_code_text_area is not None:
         hr_code_input_area_lines = hr_code_text_area.split(
             "\n"

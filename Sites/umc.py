@@ -101,6 +101,22 @@ class umc(Page):
         self.search_by_xpath(self.hrid_input).send_keys(hrid)
         self.search_by_xpath(self.hrid_search_button).click()
 
+    def update_info(self, field: str, data: str) -> bool:
+        """
+        This method update information by field
+
+        Args:
+            field (str): the field needed to be updated
+            data (str): the new data
+
+        Returns:
+            bool: status of the action
+        """
+        update_field = self.search_by_xpath(xpath=field)
+        update_field.click()
+        update_field.clearText()
+        return update_field.send_keys(data)
+
     def click_details_button(self) -> None:
         """
         This method clicks the details button.
@@ -285,19 +301,3 @@ class umc(Page):
         xpath = self.owned_role_prefixed + role_suffix
         owned_role = self.search_by_xpath(xpath=xpath)
         return owned_role.click()
-
-    def update_info(self, field: str, data: str) -> bool:
-        """
-        This method update information by field
-
-        Args:
-            field (str): the field needed to be updated
-            data (str): the new data
-
-        Returns:
-            bool: status of the action
-        """
-        update_field = self.search_by_xpath(xpath=field)
-        update_field.click()
-        update_field.clearText()
-        return update_field.send_keys(data)

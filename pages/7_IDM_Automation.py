@@ -58,14 +58,6 @@ def main():
 
     test_button = st.button("Extract button", type="primary")
 
-    # if selected_options:
-
-    #     data = {col: range(1, 4) for col in selected_options}
-
-    #     df = pd.DataFrame(data)
-    # else:
-    #     st.write("Please select at least one option.")
-
     if test_button:
         idm_page = login_to_site()
         time.sleep(15)
@@ -150,12 +142,6 @@ def main():
 
                 idm_page.get_idm_url()
                 idm_page.click_login_button()
-
-            # access_user_profile(idm_page=idm_page)
-            # # value = get_user_info(idm_page=idm_page, element_id="USER_ID")
-
-            # idm_page.get_idm_url()
-            # idm_page.click_login_button()
 
     st.text("The Result Table")
     df = pd.DataFrame(user_data)

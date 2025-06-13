@@ -10,7 +10,6 @@ from selenium.webdriver.support import expected_conditions as EC
 from Common.web_element import web_element
 
 
-
 class page_object:
     def __init__(
         self,
@@ -29,7 +28,8 @@ class page_object:
 
         self.profile = webdriver.ChromeService(executable_path=self.path)
         self.driver = webdriver.Chrome(service=self.profile)
-        self.wait = WebDriverWait(self.driver, self.default_timeout)
+        self.wait = WebDriverWait(
+            self.driver, self.default_timeout)
 
     def headless(self) -> None:
         """This is to generate headless session for chromedriver"""
@@ -80,7 +80,6 @@ class page_object:
         else:
             return web_element(found, result)
 
-
     def wait_element_to_visible(self, xpath: str) -> bool:
         """this function is wait for the element to be visible in the web page
 
@@ -92,7 +91,7 @@ class page_object:
         """
         # Wait until the element is visible
         element = self.wait.until(
-            
+
             EC.visibility_of_element_located((By.XPATH, xpath)))
         return element.is_displayed()
 
@@ -108,7 +107,7 @@ class page_object:
             bool: True if the element is clicked, and False if there's no such element found.
         """
         element = self.search_by_xpath(
-            
+
             xpath=xpath, timeout=timeout, delay=delay)
         return element.click()
 
@@ -127,7 +126,7 @@ class page_object:
             bool: True if the keys are sent, and False if there's no such element found.
         """
         element = self.search_by_xpath(
-            
+
             xpath=xpath, timeout=timeout, delay=delay)
         return element.send_keys(keys=keys)
 
@@ -138,7 +137,6 @@ class page_object:
             url (str): the desired URL.
         """
         self.driver.get(url=url)
-
 
     def select_dropdown_value(
         self, xpath: str, value: str, timeout: int = 5, delay: float = 0.2
@@ -169,7 +167,6 @@ class page_object:
                 sleep(delay)
                 continue
 
-
     def select_dropdown_by_visible_text(
         self, xpath: str, value: str, timeout: int = 5, delay: float = 0.2
     ) -> None:
@@ -198,7 +195,6 @@ class page_object:
                 logging.warning(warning)
                 sleep(delay)
                 continue
-
 
     def select_dropdown_by_contains_text(
         self, xpath: str, value: str, timeout: int = 5, delay: float = 0.2
@@ -230,14 +226,13 @@ class page_object:
                 sleep(delay)
                 continue
 
-
     def accept_the_alert_pop_up(self) -> None:
         """ 
         this function is to accept the alert pop up on the webpage
         """
 
         WebDriverWait(self.driver, self.default_timeout).until(
-            
+
             EC.alert_is_present())
         alert = Alert(self.driver)
         alert.accept()

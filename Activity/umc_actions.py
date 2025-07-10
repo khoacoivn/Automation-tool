@@ -146,7 +146,7 @@ def reactivate_account(umc_page: umc, hr_code: str) -> bool:
         try:
             umc_page.click_details_button()
             umc_page.click_activate()
-            umc_page.click_details_button()
+            # umc_page.click_details_button()
             if umc_page.is_table_is_empty() is True:
                 umc_page.click_edit()
                 umc_page.select_role(role="NON_HOSEL_USER")
@@ -157,7 +157,7 @@ def reactivate_account(umc_page: umc, hr_code: str) -> bool:
         except Exception as e:
             print("Exception at: " + str(e))
             return False
-    if umc_page.get_details_account_status() == "Active":
+    if umc_page.get_search_account_status() == "Active":
         try:
             umc_page.click_details_button()
             if umc_page.is_table_is_empty() is True:

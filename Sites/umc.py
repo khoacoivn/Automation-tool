@@ -42,6 +42,7 @@ class umc(Page):
     detail_mobile = '//*[@data-better-uid="detail.mobile"]'
     first_name = '//*[@data-better-uid="detail.name"]'
     last_name = '//*[@data-better-uid="detail.surname"]'
+    roles_table = '//*[@id="roles"]'
 
     role_palette = '//*[@data-better-uid="role-palette"]'
     first_owned_role = '//*[@data-better-uid="role-palette:selected-field"]/option'
@@ -189,6 +190,11 @@ class umc(Page):
         add_role = self.role_palette + self.add_role_button
         add_button = self.search_by_xpath(add_role)
         return add_button.click()
+
+    def is_table_is_empty(self) -> bool:
+        """This method check the table is empty or not"""
+        table = self.search_by_xpath(self.roles_table, delay=0.5)
+        return table.get_child_element() == 0
 
     def click_save(self) -> bool:
         """

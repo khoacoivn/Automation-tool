@@ -193,7 +193,7 @@ def tab1_exec(ldap_user: str, ldap_pw: str):
 
 
 def tab2_exec(ldap_user: str, ldap_pw: str):
-    st.divider()
+
     st.subheader("Add role for multiple user")
     left, rigth = st.columns(2, vertical_alignment="top")
     login_name_input_area = left.text_area("Input login name here")
@@ -246,7 +246,6 @@ def tab2_exec(ldap_user: str, ldap_pw: str):
 
 def tab3_exec(ldap_user: str, ldap_pw: str):
     # check active account UMC
-    st.divider()
     st.text("Check status account UMC")
     hr_code_input_area = st.text_area("Input Hr code or HCG here")
     hr_code_input_area_lines = hr_code_input_area.split(
@@ -426,14 +425,7 @@ def tab4_exec(ldap_user: str, ldap_pw: str):
 
 
 def tab5_exec():
-    st.divider()
     st.subheader("Reactivate accounts on UMC")
-
-    reactivate_upload = st.file_uploader(
-        label="Reactivate HRcode List",
-        type=["csv"],
-        accept_multiple_files=False,
-    )
 
     login_name_input_area = st.text_area("Please insert reactive account here")
     login_name_input_area_list = login_name_input_area.split(
@@ -502,7 +494,6 @@ def tab5_exec():
 
 
 def tab6_exec():
-    st.divider()
     st.subheader("Emergency add role on UMC")
 
     hr_code_text_area = st.text_area("Input Hr codes or HCGs")

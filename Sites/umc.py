@@ -189,12 +189,12 @@ class umc(Page):
         remove_button = self.search_by_xpath(remove_role)
         return remove_button.click()
 
-    def click_add_role(self) -> None:
+    def click_add_role(self) -> bool:
         """
         This method clicks the add role button.
         """
         add_role = self.role_palette + self.add_role_button
-        add_button = self.search_by_xpath(add_role)
+        add_button = self.search_by_xpath(add_role, delay= 0.5)
         return add_button.click()
 
     def is_table_is_empty(self) -> bool:
@@ -297,7 +297,7 @@ class umc(Page):
         suffix = self.role_palette_suffix.replace("replaced_text", role)
         xpath = self.role_palette + suffix
 
-        return self.search_by_xpath(xpath=xpath).click()
+        return self.search_by_xpath(xpath=xpath, delay=0.5).click()
 
     def select_owned_role(self, role: str) -> bool:
         """

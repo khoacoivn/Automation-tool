@@ -42,8 +42,8 @@ def main():
     # Choose action to take on UMC
     st.subheader("Choose your action on UMC", divider="red")
 
-    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
-        ["Deactivate/Reactive", "Add/Remove Role", "Check status", "Update Info", "Reactivate Accounts", "Emergency Role Add"])
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(
+        ["Deactivate/Reactive", "Add/Remove Role", "Check status", "Update Info", "Reactivate Accounts", "Emergency Role Add", "TestLDAPs"])
 
     with tab1:
         tab1_exec(ldap_user, ldap_pw)

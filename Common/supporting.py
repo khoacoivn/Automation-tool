@@ -144,6 +144,7 @@ def generate_OTP():
         str: the generated OTP
     """
     try:
+        import getpass
         timeOTP = TOTP('base32secret3232', interval=600)
 
         # Assign the Power Automate Webhook
@@ -155,6 +156,7 @@ def generate_OTP():
                             title_style=ContainerStyle.DEFAULT)
         container = Container(style=ContainerStyle.DEFAULT)
         container.add_text_block(text="Generated OTP: " + timeOTP.now())
+        container.add_text_block(text="Requestor: " + getpass.getuser())
         card.add_container(container=container)
         webhook.add_cards(card)
         webhook.send()

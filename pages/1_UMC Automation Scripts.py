@@ -16,6 +16,7 @@ from Activity.umc_actions import (
     update_dob,
     update_gender,
     update_employed_since,
+    update_mail,
     reactivate_account
 )
 
@@ -303,6 +304,7 @@ def tab4_exec(ldap_user: str, ldap_pw: str):
 
     # DoB update Button on Column 2
     update_dob_button = col_2.button("Update BoB")
+    update_mail_button = col_2.button("Update Mail")
 
     # Update number on Column 3
     update_name_button = col_3.button("Update name")
@@ -415,6 +417,28 @@ def tab4_exec(ldap_user: str, ldap_pw: str):
                 umc_page=umc_page,
                 hr_code=hr_code,
                 employedSince=employedSince
+            )
+            # Keep this line for debugging, but it might print None
+            left.write(list_error)
+            for i in range(len(list_error)):
+                table_of_error.loc[len(table_of_error)] = [
+                    hr_code, list_error[i].split("-", 1)[1]]
+            umc_page.get_umc_url()
+
+    if update_mail_button:
+        # Start Selenium
+        umc_page = login_to_site(ldap_user=ldap_user, ldap_pw=ldap_pw)
+        table_of_error = pd.DataFrame(columns=["Hr Code", "Steps"])
+        left, right = st.columns(
+            [0.4, 0.6], vertical_alignment="top", gap="large")
+        # loop through CSV & Search for HR code
+        for index, row in csv_data.iterrows():
+            hr_code = row["HR Code"]
+            mail = row["Mail"]
+            list_error = update_mail(
+                umc_page=umc_page,
+                hr_code=hr_code,
+                mail=mail
             )
             # Keep this line for debugging, but it might print None
             left.write(list_error)

@@ -239,7 +239,7 @@ def authenticate_ldap(username: str, password: str) -> str:
             server, f"CN={username},OU=Users,OU=VN,DC=hcg,DC=homecredit,DC=net", f"{password}", auto_bind=True)
         if conn.bound:
             conn.search(search_base="OU=Users,OU=VN,DC=hcg,DC=homecredit,DC=net",
-                        search_filter=f"(samAccountName={username})", search_scope=SUBTREE, attributes="displayName")
+                        search_filter=f"(&(samAccountName={username})(memberOf=CN=VN.SD.SD_AUTOMATION_HUB.USER,OU=Groups,OU=VN,DC=hcg,DC=homecredit,DC=net))", search_scope=SUBTREE, attributes="displayName")
             userDN = conn.entries[0].displayName
             conn.unbind()
             return userDN

@@ -1,10 +1,6 @@
-from Common.supporting import (
-    push_msg_to_MSTeams,
-    adaptive_card_build_MSteams,
-    generate_OTP,
-    verify_OTP,
-    system_env_get_cred
-)
+import streamlit as st
+import pandas as pd
+from inspect import currentframe
 from Activity.umc_actions import (
     login_to_site,
     add_homesis_homesis_user,
@@ -16,17 +12,19 @@ from Activity.umc_actions import (
     check_account_status,
     add_role_umc,
     remove_multi_roles_umc,
-    update_phone_number,
-    update_name,
-    update_dob,
-    update_gender,
-    update_employed_since,
-    update_mail,
+    update_info_UMC,
     reactivate_account
 )
-import pandas as pd
-import streamlit as st
-from Common.supporting import login_status_check, logout_render
+from Common.supporting import (
+    push_msg_to_MSTeams,
+    adaptive_card_build_MSteams,
+    generate_OTP,
+    verify_OTP,
+    system_env_get_cred,
+    login_status_check,
+    logout_render,
+    feedback_form_render
+)
 
 # This is to jump the user back to login if their are not authenticated
 login_status_check()
@@ -329,10 +327,11 @@ def tab4_exec(ldap_user: str, ldap_pw: str):
         for index, row in csv_data.iterrows():
             hr_code = row["HR Code"]
             phone_number = row["Phone"]
-            list_error = update_phone_number(
+            list_error = update_info_UMC(
                 umc_page=umc_page,
                 hr_code=hr_code,
-                phone_number=phone_number
+                new_info=phone_number,
+                kwargs="detail_phone",
             )
             # Keep this line for debugging, but it might print None
             left.write(list_error)
@@ -512,14 +511,14 @@ def tab5_exec():
                     sleep(5)
                     umc_page = login_to_site(
                         ldap_user="umc_admin1", ldap_pw=cred)
-                    # table_of_error = pd.DataFrame(columns=["Hr Code", "Steps"])
-                    # log_left, log_right = st.columns([0.4, 0.6], vertical_alignment="top", gap="large")
                     for index, hr_code in enumerate(login_name_input_area_list):
                         reactivation_status = reactivate_account(
                             umc_page=umc_page, hr_code=hr_code)
                         if reactivation_status is False:
-                            st.write(hr_code + ": Reactivation Failed")
+                            st.write(f"{hr_code}: Reactivation Failed")
                         umc_page.get_umc_url()
+                    feedback_form_render(target=currentframe(
+                    ).f_code.co_name, user=st.session_state["userDisplayName"])
                     # Reset session state after function complete
                     st.session_state.clear()
 
@@ -541,10 +540,12 @@ def tab6_exec():
                     umc_page=umc_page, hr_code=code, role_list=["NON_HOSEL_USER"])
                 if add_role_status is False:
                     card = adaptive_card_build_MSteams(
-                        msg_title="Error when running Emergency add role on UMC", param1="User: " + str(st.session_state["userDisplayName"]))
+                        msg_title="Error when running Emergency add role on UMC", param1=f'User: {str(st.session_state["userDisplayName"])}')
                     push_msg_to_MSTeams(adaptiveCard=card)
-                    st.write(code + ": Emergency add role Failed")
+                    st.write(f"{code}: Emergency add role Failed")
                 umc_page.get_umc_url()
+            feedback_form_render(target=currentframe(
+            ).f_code.co_name, user=st.session_state["userDisplayName"])
 
 
 if __name__ == "__main__":

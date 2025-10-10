@@ -230,7 +230,7 @@ def authenticate_ldap(username: str, password: str) -> str:
         password (str): password of the user
 
     Returns:
-        bool: the status of the login request, True if success login and False if failed login
+        str: the status of the login request, return user DisplayName if success login and emptyString if failed login
     """
     try:
         userDN = ""
@@ -264,3 +264,16 @@ def logout_render():
     if st.sidebar.button("Logout"):
         st.session_state["authenticated"] = False
         st.rerun()
+
+
+def feedback_form_render(target: str, user: str):
+    try:
+        with st.container(border=True, height="content"):
+            st.write("Our solution solved your problem?")
+            st.write(target)
+            feedback = st.feedback(options="thumbs", width="stretch")
+            return feedback
+    except Exception as e:
+        print(e)
+        return None
+    return None

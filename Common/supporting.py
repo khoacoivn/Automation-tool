@@ -7,6 +7,9 @@ from pyotp import TOTP
 from msteamsapi import AdaptiveCard, Container, TeamsWebhook, ContainerStyle
 from ldap3 import Server, Connection, ALL, SUBTREE
 
+REACTIVATE_WEBHOOK_URL = "https://prod-102.westeurope.logic.azure.com:443/workflows/622b616dc2a9428e9dfa90b97df7a5c2/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=7J64W7hby4vALfHoRosepx0voq-jJd-KB0Nzepfgu0Y"
+ERROR_WEBHOOK_URL = "https://default5675d32119d14c9596842c28ac8f80.a4.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/2441849b00aa40dfbfd4badcc9f748d3/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ypI1uwC9FCskpObxzJxKqzZD85tSs2lTYV5QfrDcdWs"
+
 
 def support_Excel_read(read_path: str, sheet_name: str = "Sheet1") -> DataFrame:
     """This function is to support reading Excel file on xlsx attachment
@@ -28,8 +31,30 @@ def support_Excel_read(read_path: str, sheet_name: str = "Sheet1") -> DataFrame:
         return df[:0]
 
 
-def push_error_to_MSTeams(webhook: str) -> None:
-    pass
+def push_msg_to_MSTeams(adaptiveCard: AdaptiveCard, webhook_url: str = ERROR_WEBHOOK_URL) -> bool:
+    try:
+        webhook = TeamsWebhook(webhook_url=webhook_url)
+        webhook.add_cards(adaptiveCard)
+        webhook.send()
+        return True
+    except Exception as e:
+        print(e)
+        return False
+
+
+def adaptive_card_build_MSteams(msg_title: str, **kwargs) -> AdaptiveCard:
+    try:
+        card = AdaptiveCard(
+            title=msg_title, title_style=ContainerStyle.DEFAULT)
+        container = Container(style=ContainerStyle.DEFAULT)
+        if kwargs:
+            for value in kwargs.values():
+                container.add_text_block(value)
+        card.add_container(container=container)
+        return card
+    except Exception as e:
+        print(e)
+    return None  # type: ignore
 
 # BSL Section
 
@@ -158,28 +183,19 @@ def powershell_run_output(script_path: str) -> str:
 
 
 def generate_OTP():
-    """This function used to generate OTP and send to MSteams
+    """This function to generate OTP
 
     Returns:
-        str: the generated OTP
+        TOTP: the variable of time OTP that can be pass down to used for verification
     """
     try:
-        import getpass
+        # Generate OTP fucntion
         timeOTP = TOTP('base32secret3232', interval=600)
-
-        # Assign the Power Automate Webhook
-        webhook = TeamsWebhook(
-            "https://prod-102.westeurope.logic.azure.com:443/workflows/622b616dc2a9428e9dfa90b97df7a5c2/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=7J64W7hby4vALfHoRosepx0voq-jJd-KB0Nzepfgu0Y")
-
         # Build & send the message card
-        card = AdaptiveCard(title="Reactivate OTP",
-                            title_style=ContainerStyle.DEFAULT)
-        container = Container(style=ContainerStyle.DEFAULT)
-        container.add_text_block(text="Generated OTP: " + timeOTP.now())
-        container.add_text_block(text="Requestor: " + getpass.getuser())
-        card.add_container(container=container)
-        webhook.add_cards(card)
-        webhook.send()
+        card = adaptive_card_build_MSteams(msg_title="Reactivate OTP", param1="Generated OTP: " +
+                                           timeOTP.now(), param2="Requestor: " + str(st.session_state["userDisplayName"]))
+        push_msg_to_MSTeams(
+            webhook_url=REACTIVATE_WEBHOOK_URL, adaptiveCard=card)
 
         # return the OTP value to compare in the verify_OTP function
         return timeOTP
@@ -191,6 +207,7 @@ def verify_OTP(sourceOTP: TOTP, OTP: str) -> bool:
     """This function used to verify OTP when input
 
     Args:
+        sourceOTP (TOTP): the source OTP that were passdown in the previous generate_OTP function
         OTP (str): the OTP that SD input to verify
 
     Returns:
@@ -222,7 +239,7 @@ def authenticate_ldap(username: str, password: str) -> str:
             server, f"CN={username},OU=Users,OU=VN,DC=hcg,DC=homecredit,DC=net", f"{password}", auto_bind=True)
         if conn.bound:
             conn.search(search_base="OU=Users,OU=VN,DC=hcg,DC=homecredit,DC=net",
-                        search_filter=f"(samAccountName={username})", search_scope=SUBTREE, attributes="displayName")
+                        search_filter=f"(&(samAccountName={username})(memberOf=CN=VN.SD.SD_AUTOMATION_HUB.USER,OU=Groups,OU=VN,DC=hcg,DC=homecredit,DC=net))", search_scope=SUBTREE, attributes="displayName")
             userDN = conn.entries[0].displayName
             conn.unbind()
             return userDN
@@ -247,3 +264,75 @@ def logout_render():
     if st.sidebar.button("Logout"):
         st.session_state["authenticated"] = False
         st.rerun()
+
+
+def request_to_automate_button():
+    """This is function to submit Request to automate your work
+    """
+    if st.sidebar.button("Request to automate"):
+        st.session_state["autoreq"] = True
+
+    if st.session_state["autoreq"] is True:
+        request_to_automate()
+
+
+@st.dialog("Request to automate", width="large")
+def request_to_automate():
+    """Display the contribution form dialog"""
+    st.markdown("Fill in the details below to create a JIRA Request.")
+
+    with st.form("contribution_form", clear_on_submit=True):
+        # Summary field
+        summary = st.text_input(
+            "Summary *",
+            placeholder="Enter a brief summary",
+            help="Brief summary of the request to automate"
+        )
+
+        # Description field
+        description = st.text_area(
+            "Description *",
+            placeholder="Enter detailed description",
+            height=120,
+            help="Detailed description of the request to automate"
+        )
+
+        # File uploader for attachments
+        attachments = st.file_uploader(
+            "Picture Attachments",
+            type=["png", "jpg", "jpeg", "gif"],
+            accept_multiple_files=True,
+            help="Upload files (optional)"
+        )
+
+        # Display uploaded files
+        if attachments:
+            st.markdown("**Uploaded files:**")
+            for file in attachments:
+                st.markdown(f"- {file.name} ({file.size / 1024:.1f} KB)")
+
+        # Form buttons
+        col1, col2 = st.columns([1, 5])
+
+        with col1:
+            cancel_button = st.form_submit_button(
+                "Cancel", use_container_width=True)
+
+        with col2:
+            submit_button = st.form_submit_button(
+                "Submit",
+                type="primary",
+                use_container_width=True
+            )
+
+        # Handle form submission
+        if submit_button:
+            if not summary or not description:
+                st.error(
+                    "Please fill in all required fields (Summary and Description)")
+                st.session_state["autoreq"] = False
+            else:
+                st.session_state["autoreq"] = False
+            st.session_state["autoreq"] = False
+        if cancel_button:
+            st.session_state["autoreq"] = False

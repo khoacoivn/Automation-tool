@@ -1,5 +1,5 @@
 import streamlit as st
-from Common.supporting import authenticate_ldap, logout_render
+from Common.supporting import authenticate_ldap, logout_render, request_to_automate_button
 
 st.set_page_config(
     page_title="Welcome to SD AutoHub",
@@ -12,6 +12,7 @@ st.set_page_config(
 if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
     st.session_state["userDisplayName"] = ""
+    st.session_state["autoreq"] = False
 
 
 def login_page():
@@ -36,6 +37,7 @@ def login_page():
 if st.session_state["authenticated"]:
     st.success("Login success! Welcome " +
                str(st.session_state["userDisplayName"]))
+    request_to_automate_button()
     logout_render()
 else:
     login_page()

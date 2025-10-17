@@ -278,3 +278,75 @@ def feedback_form_render(target: str, user: str):
         print(e)
         return None
     return None
+
+
+def request_to_automate_button():
+    """This is function to submit Request to automate your work
+    """
+    if st.sidebar.button("Request to automate"):
+        st.session_state["autoreq"] = True
+
+    if st.session_state["autoreq"] is True:
+        request_to_automate()
+
+
+@st.dialog("Request to automate", width="large")
+def request_to_automate():
+    """Display the contribution form dialog"""
+    st.markdown("Fill in the details below to create a JIRA Request.")
+
+    with st.form("contribution_form", clear_on_submit=True):
+        # Summary field
+        summary = st.text_input(
+            "Summary *",
+            placeholder="Enter a brief summary",
+            help="Brief summary of the request to automate"
+        )
+
+        # Description field
+        description = st.text_area(
+            "Description *",
+            placeholder="Enter detailed description",
+            height=120,
+            help="Detailed description of the request to automate"
+        )
+
+        # File uploader for attachments
+        attachments = st.file_uploader(
+            "Picture Attachments",
+            type=["png", "jpg", "jpeg", "gif"],
+            accept_multiple_files=True,
+            help="Upload files (optional)"
+        )
+
+        # Display uploaded files
+        if attachments:
+            st.markdown("**Uploaded files:**")
+            for file in attachments:
+                st.markdown(f"- {file.name} ({file.size / 1024:.1f} KB)")
+
+        # Form buttons
+        col1, col2 = st.columns([1, 5])
+
+        with col1:
+            cancel_button = st.form_submit_button(
+                "Cancel", use_container_width=True)
+
+        with col2:
+            submit_button = st.form_submit_button(
+                "Submit",
+                type="primary",
+                use_container_width=True
+            )
+
+        # Handle form submission
+        if submit_button:
+            if not summary or not description:
+                st.error(
+                    "Please fill in all required fields (Summary and Description)")
+                st.session_state["autoreq"] = False
+            else:
+                st.session_state["autoreq"] = False
+            st.session_state["autoreq"] = False
+        if cancel_button:
+            st.session_state["autoreq"] = False

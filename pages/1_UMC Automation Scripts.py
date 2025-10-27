@@ -27,12 +27,14 @@ from Activity.umc_actions import (
 import pandas as pd
 import streamlit as st
 from Common.supporting import login_status_check, logout_render
+from Common.constant import exception
 
 # This is to jump the user back to login if their are not authenticated
 login_status_check()
 logout_render()
 
 
+@exception.handler
 def main():
     # Title of the page
     st.title("UMC AUTOMATION HUB")
@@ -139,6 +141,10 @@ def tab1_exec(ldap_user: str, ldap_pw: str):
     if active_account_button:
         # Start Selenium
         umc_page = login_to_site(ldap_user=ldap_user, ldap_pw=ldap_pw)
+        # Read CSV Data
+        if csv_upload is not None:
+            csv_data = pd.read_csv(csv_upload, converters={"HR Code": str})
+            st.write(csv_data)
 
         # Loop through CSV & Search for HR Code
         for index, row in csv_data.iterrows():

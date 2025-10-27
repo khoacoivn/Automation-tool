@@ -7,6 +7,7 @@ from Common.supporting import (
     login_status_check,
     logout_render
 )
+from Common.constant import exception
 import pandas as pd
 import streamlit as st
 
@@ -15,6 +16,7 @@ login_status_check()
 logout_render()
 
 
+@exception.handler
 def main():
     """
     This function is to support SD task interact with BSL

@@ -1,4 +1,5 @@
 import streamlit as st
+from Common.constant import exception
 
 # This is to jump the user back to login if their are not authenticated
 if st.session_state["authenticated"] is not True:
@@ -31,6 +32,7 @@ login_status_check()
 logout_render()
 
 
+@exception.handler
 def main():
     """
     This function is to support SD task interact with Homesis

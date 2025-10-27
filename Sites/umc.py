@@ -1,9 +1,12 @@
 import logging
+import time
 from selenium.common.exceptions import NoSuchElementException
 from Common.page_object import page_object as Page
-
+from Common.constant import exception
 
 # Element Path
+
+
 class umc(Page):
     """This is a wrapper for UMC Page, based on the customed Page Object, which is also a wrapper of Selenium driver
 
@@ -84,11 +87,18 @@ class umc(Page):
                                  delay=0.5).send_keys(ldap_pw)
             # if self.wait_element_to_visible(self.login_button)
             self.search_by_xpath(self.login_button, delay=0.5).click()
-            return True
-            # return False
+            # wait for login
+            time.sleep(2)
+            if self.check_login_status() is False:
+                logging.critical("Invalid Username or Password.")
+                raise exception.LoginError
+                # return False
+            else:
+                return True
         else:
             logging.critical("Missing Username or Password.")
-            return False
+            raise exception.LoginError
+            # return False
 
     def stop(self) -> None:
         self.end_process()

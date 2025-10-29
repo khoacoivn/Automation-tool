@@ -30,6 +30,8 @@ from Activity.umc_actions import (
 import Common.constant.app_message as app_msg
 import pandas as pd
 import streamlit as st
+from Common.supporting import login_status_check, logout_render
+from Common.constant import app_logic_exception
 
 # This is to jump the user back to login if their are not authenticated
 login_status_check()
@@ -37,6 +39,7 @@ logout_render()
 request_to_automate_button()
 
 
+@app_logic_exception.app_logic_exception_handler
 def main():
     # Title of the page
     st.title("UMC AUTOMATION HUB")

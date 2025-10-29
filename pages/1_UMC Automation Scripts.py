@@ -538,7 +538,10 @@ def tab5_exec():
                     st.write("OTP failed to verify!")
 
                     # Reset session state after function complete
-                    st.session_state.clear()
+                    # st.session_state.clear()
+                    st.session_state['getOTP_clicked'] = False
+                    st.session_state['confirmOTP_clicked'] = False
+                    st.rerun()
 
             # Run Reactivate Scripts if the verification returns valid
             if st.session_state['confirmOTP_clicked'] and result is True:
@@ -556,9 +559,12 @@ def tab5_exec():
                             umc_page=umc_page, hr_code=hr_code)
                         if reactivation_status is False:
                             st.write(hr_code + ": Reactivation Failed")
-                        umc_page.get_umc_url()
+                    umc_page.get_umc_url()
                     # Reset session state after function complete
-                    st.session_state.clear()
+                    # st.session_state.clear()
+                    st.session_state['getOTP_clicked'] = False
+                    st.session_state['confirmOTP_clicked'] = False
+                    st.rerun()
 
 
 def tab6_exec():

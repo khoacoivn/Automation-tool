@@ -109,7 +109,7 @@ class Session:
                 self.url + endpoint, auth=self.authen_token, json=payload, timeout=10)
         elif isinstance(self.authen_token, str):
             result = requests.patch(
-                self.url + endpoint, headers={"Authorization": f"{self.authen_token}"}, json=payload, timeout=10, verify=False)
+                self.url + endpoint, headers={"Authorization": f"{self.authen_token}"}, json=payload, timeout=30, verify=False)
         return result
 
     def delete_request(self, endpoint: str, payload) -> requests.models.Response:

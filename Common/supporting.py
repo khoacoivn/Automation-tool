@@ -1,7 +1,7 @@
 from pandas import DataFrame, read_excel
 import streamlit as st
 import json
-from requests import Response
+from requests import Response, post
 import logging
 from pyotp import TOTP
 from msteamsapi import AdaptiveCard, Container, TeamsWebhook, ContainerStyle
@@ -164,16 +164,16 @@ def cyberark_get_credential_password() -> str:
         return ""
 
 
-def system_env_get_cred() -> str:
-    """This function is to get credential password stored on System Variables
+def system_env_get_cred(key: str) -> str:
+    """This function is to get information stored on System Variables
 
     Returns:
-        str: password value of the credential
+        str: value of the credential
     """
     from os import environ
     result = ""
     try:
-        result = environ['UMCAdminCred']
+        result = environ[key]
         return result
     except Exception as e:
         print(e)
@@ -268,6 +268,25 @@ def authenticate_ldap(username: str, password: str) -> str:
     except Exception as e:
         print(f"Error when calling to LDAP server: {e}")
         return ""
+
+
+def authenticate_HOSELSSO(username: str, password: str) -> bool:
+    """This function is used to authenticate HOSEL SSO
+
+    Args:
+        username (str): username of the user
+        password (str): password of the user
+
+    Returns:
+        bool: status of the login
+    """
+    response = post(
+        url="https://sso.homecredit.vn/opensso/identity/json/authenticate", data={
+            "username": username.strip(),
+            "password": password.strip()})
+    if response.status_code == 200:
+        return True
+    return False
 
 
 def authenticate_swagger(username: str, password: str) -> str:

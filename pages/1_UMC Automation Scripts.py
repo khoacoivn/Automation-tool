@@ -7,6 +7,7 @@ from Common.supporting import (
     login_status_check,
     logout_render,
     authenticate_swagger,
+    authenticate_HOSELSSO,
     request_to_automate_button
 )
 from Activity.umc_actions import (
@@ -26,16 +27,27 @@ from Activity.umc_actions import (
     reactivate_account,
     umc_start_session,
 )
-import Common.constant.app_message as app_msg
+from Common.constant.app_message import APP_MESSAGE as app_msg
 import pandas as pd
 import streamlit as st
 from Common.constant import app_logic_exception
+
 # This is to jump the user back to login if their are not authenticated
 login_status_check()
 logout_render()
 request_to_automate_button()
 
+# ------------------------------------------Helpers------------------------------------------
 
+
+def authen_get_UMC_session(username: str, password: str):
+    if not authenticate_HOSELSSO(username=username, password=password):
+        st.error(app_msg.APP_LOGIN_FAILED_MSG)
+        return None
+    return umc_start_session(authenticate_swagger(username=username, password=password))
+
+
+# ------------------------------------------Main------------------------------------------
 @app_logic_exception.app_logic_exception_handler
 def main():
     # Title of the page
@@ -97,16 +109,17 @@ def tab1_exec(ldap_user: str, ldap_pw: str):
 
     # deactive account
     if deactive_ra_button:
-        with st.spinner(app_msg.APP_MESSAGE.APP_RUNNING_MSG):
-            request = umc_start_session(authenticate_swagger(
-                username=ldap_user, password=ldap_pw))
-
+        with st.spinner(app_msg.APP_RUNNING_MSG):
+            request = authen_get_UMC_session(
+                username=ldap_user, password=ldap_pw)
+            if request is None:
+                return
             # Loop through CSV & Search for HR Code
             for index, row in csv_data.iterrows():
                 hr_code = row["HR Code"]
                 if not deactivate_ra(umc_request=request, hr_code=hr_code):
                     st.write(f"Deactivation failed for account {hr_code}")
-        st.write(app_msg.APP_MESSAGE.APP_FINISH_MSG)
+            st.write(app_msg.APP_FINISH_MSG)
 
 
 def tab2_exec(ldap_user: str, ldap_pw: str):
@@ -123,16 +136,16 @@ def tab2_exec(ldap_user: str, ldap_pw: str):
         add_role_umc_btn = st.button("Add roles UMC", type="primary")
         if add_role_umc_btn:
             # Start Selenium
-            with st.spinner(app_msg.APP_MESSAGE.APP_RUNNING_MSG):
-                request = umc_start_session(authenticate_swagger(
-                    username=ldap_user, password=ldap_pw))
-                for index in range(len(login_name_input_area_list)):
-                    login_name = login_name_input_area_list[index]
-                    status = add_multi_role_umc(
-                        umc_request=request, hr_code=login_name, role_list=role_umc_input_area_list)
-                    if status:
-                        st.write(f"{login_name} - Add role successful")
-            st.write(app_msg.APP_MESSAGE.APP_FINISH_MSG)
+            with st.spinner(app_msg.APP_RUNNING_MSG):
+                request = authen_get_UMC_session(
+                    username=ldap_user, password=ldap_pw)
+                if request is None:
+                    return
+                status = add_multi_role_umc(
+                    umc_request=request, hr_codes=login_name_input_area_list, role_list=role_umc_input_area_list)
+                if status:
+                    st.write(" All accounts - Add role successful")
+                st.write(app_msg.APP_FINISH_MSG)
 
     st.divider()
     st.subheader("Remove role for multiple user")
@@ -147,16 +160,18 @@ def tab2_exec(ldap_user: str, ldap_pw: str):
     if login_name_input_area.strip() != '' and role_umc_input_area.strip() != '':
         remove_role_umc_btn = st.button("Remove roles UMC", type="primary")
         if remove_role_umc_btn:
-            with st.spinner(app_msg.APP_MESSAGE.APP_RUNNING_MSG):
-                request = umc_start_session(authenticate_swagger(
-                    username=ldap_user, password=ldap_pw))
+            with st.spinner(app_msg.APP_RUNNING_MSG):
+                request = authen_get_UMC_session(
+                    username=ldap_user, password=ldap_pw)
+                if request is None:
+                    return
                 for index in range(len(login_name_input_area_list)):
                     login_name = login_name_input_area_list[index]
                     status = remove_multi_role_umc(
-                        umc_request=request, hr_code=login_name, role_list=role_umc_input_area_list)
+                        umc_request=request, hr_code=login_name.strip(), role_list=role_umc_input_area_list)
                     if status:
                         st.write(f"{login_name} - Remove role successful")
-            st.write(app_msg.APP_MESSAGE.APP_FINISH_MSG)
+                st.write(app_msg.APP_FINISH_MSG)
 
 
 def tab3_exec(ldap_user: str, ldap_pw: str):
@@ -169,36 +184,39 @@ def tab3_exec(ldap_user: str, ldap_pw: str):
     check_status_btn = st.button("Check status account", type="primary")
 
     if check_status_btn:
-        with st.spinner(app_msg.APP_MESSAGE.APP_RUNNING_MSG):
-            request = umc_start_session(token=authenticate_swagger(
-                username=ldap_user, password=ldap_pw))
+        with st.spinner(app_msg.APP_RUNNING_MSG):
+            request = authen_get_UMC_session(
+                username=ldap_user, password=ldap_pw)
+            if request is None:
+                return
             data_user_status_list = []
             for hr_code in filter(None, hr_code_input_area_lines):
                 status = check_account_status(
                     umc_request=request, hr_code=hr_code)
                 data_user_status_list.append(
                     {"HR Code": hr_code, "Status": status})
-            st.write(app_msg.APP_MESSAGE.APP_FINISH_MSG)
+            st.write(app_msg.APP_FINISH_MSG)
 
-        # Create the DataFrame *outside* the loop (only once):
-        # <--- DataFrame created here
-        data_user_status = pd.DataFrame(data_user_status_list)
+            # Create the DataFrame *outside* the loop (only once):
+            # <--- DataFrame created here
+            data_user_status = pd.DataFrame(data_user_status_list)
 
-        # display result
-        left, right = st.columns(2, vertical_alignment="top")
-        data_user_status_inactive = data_user_status[
-            data_user_status["Status"] == "INACTIVE"
-        ]
-        right.divider(width="stretch")
-        right.subheader(":red[Inactive user]")
-        right.text(f"Found {len(data_user_status_inactive)} inactive user(s)")
-        right.write(data_user_status_inactive)
-        left.subheader(":red[Total result]")
-        left.subheader(":red[Active Users]")
-        left.text("Successfully run " +
-                  str(len(data_user_status)) + " users")
-        data_user_status = data_user_status[data_user_status["Status"] != "INACTIVE"]
-        left.write(data_user_status)
+            # display result
+            left, right = st.columns(2, vertical_alignment="top")
+            data_user_status_inactive = data_user_status[
+                data_user_status["Status"] == "INACTIVE"
+            ]
+            right.divider(width="stretch")
+            right.subheader(":red[Inactive user]")
+            right.text(
+                f"Found {len(data_user_status_inactive)} inactive user(s)")
+            right.write(data_user_status_inactive)
+            left.subheader(":red[Total result]")
+            left.subheader(":red[Active Users]")
+            left.text("Successfully run " +
+                      str(len(data_user_status)) + " users")
+            data_user_status = data_user_status[data_user_status["Status"] != "INACTIVE"]
+            left.write(data_user_status)
 
 
 def tab4_exec(ldap_user: str, ldap_pw: str):
@@ -211,7 +229,7 @@ def tab4_exec(ldap_user: str, ldap_pw: str):
     # Read CSV Data
     if csv_upload is not None:
         csv_data = pd.read_csv(csv_upload, converters={
-                               "HR Code": str, "Phone": str})
+            "HR Code": str, "Phone": str})
         st.write(csv_data)
 
     # Create columns for update UMC info
@@ -233,58 +251,41 @@ def tab4_exec(ldap_user: str, ldap_pw: str):
 
     # Update info account UMC
     if update_phone_button:
-        with st.spinner(app_msg.APP_MESSAGE.APP_RUNNING_MSG):
-            # Start Selenium
-            umc_page = login_to_site(ldap_user=ldap_user, ldap_pw=ldap_pw)
-            table_of_error = pd.DataFrame(columns=["Hr Code", "Steps"])
-            left, right = st.columns(
-                [0.4, 0.6], vertical_alignment="top", gap="large")
-            # Loop through CSV & Search for HR Code
+        with st.spinner(app_msg.APP_RUNNING_MSG):
+            request = authen_get_UMC_session(
+                username=ldap_user, password=ldap_pw)
+            if request is None:
+                return
             for index, row in csv_data.iterrows():
                 hr_code = row["HR Code"]
                 phone_number = row["Phone"]
-                list_error = update_phone_number(
-                    umc_page=umc_page,
-                    hr_code=hr_code,
-                    phone_number=phone_number
-                )
-                # Keep this line for debugging, but it might print None
-                left.write(list_error)
-                for i in range(len(list_error)):
-                    table_of_error.loc[len(table_of_error)] = [
-                        hr_code, list_error[i].split("-", 1)[1]]
-                umc_page.get_umc_url()
-
-        st.write(app_msg.APP_MESSAGE.APP_FINISH_MSG)
+                status = update_phone_number(
+                    umc_request=request, hr_code=hr_code, phone_number=phone_number)
+                if not status:
+                    st.write(
+                        f"{hr_code} - Failed - Change information unsuccessful!")
+            st.write(app_msg.APP_FINISH_MSG)
 
     if update_name_button:
-        with st.spinner(app_msg.APP_MESSAGE.APP_RUNNING_MSG):
-            # Start Selenium
-            umc_page = login_to_site(ldap_user=ldap_user, ldap_pw=ldap_pw)
-            table_of_error = pd.DataFrame(columns=["Hr Code", "Steps"])
-            left, right = st.columns(
-                [0.4, 0.6], vertical_alignment="top", gap="large")
+        with st.spinner(app_msg.APP_RUNNING_MSG):
+            request = authen_get_UMC_session(
+                username=ldap_user, password=ldap_pw)
+            if request is None:
+                return
             # loop through CSV & Search for HR code
             for index, row in csv_data.iterrows():
                 hr_code = row["HR Code"]
                 first_name = row["First Name"]
                 last_name = row["Last Name"]
-                list_error = update_name(
-                    umc_page=umc_page,
-                    hr_code=hr_code,
-                    first_name=first_name,
-                    last_name=last_name
-                )
-                # Keep this line for debugging, but it might print None
-                left.write(list_error)
-                for i in range(len(list_error)):
-                    table_of_error.loc[len(table_of_error)] = [
-                        hr_code, list_error[i].split("-", 1)[1]]
-                umc_page.get_umc_url()
-        st.write(app_msg.APP_MESSAGE.APP_FINISH_MSG)
+                status = update_name(
+                    umc_request=request, hr_code=hr_code, first_name=first_name, last_name=last_name)
+                if not status:
+                    st.write(
+                        f"{hr_code} - Failed - Change information unsuccessful!")
+            st.write(app_msg.APP_FINISH_MSG)
 
     if update_dob_button:
-        with st.spinner(app_msg.APP_MESSAGE.APP_RUNNING_MSG):
+        with st.spinner(app_msg.APP_RUNNING_MSG):
             # Start Selenium
             umc_page = login_to_site(ldap_user=ldap_user, ldap_pw=ldap_pw)
             table_of_error = pd.DataFrame(columns=["Hr Code", "Steps"])
@@ -299,16 +300,15 @@ def tab4_exec(ldap_user: str, ldap_pw: str):
                     hr_code=hr_code,
                     date_of_birth=date_of_birth
                 )
-                # Keep this line for debugging, but it might print None
                 left.write(list_error)
                 for i in range(len(list_error)):
                     table_of_error.loc[len(table_of_error)] = [
                         hr_code, list_error[i].split("-", 1)[1]]
                 umc_page.get_umc_url()
-        st.write(app_msg.APP_MESSAGE.APP_FINISH_MSG)
+        st.write(app_msg.APP_FINISH_MSG)
 
     if update_gender_button:
-        with st.spinner(app_msg.APP_MESSAGE.APP_RUNNING_MSG):
+        with st.spinner(app_msg.APP_RUNNING_MSG):
             # Start Selenium
             umc_page = login_to_site(ldap_user=ldap_user, ldap_pw=ldap_pw)
             table_of_error = pd.DataFrame(columns=["Hr Code", "Steps"])
@@ -329,34 +329,24 @@ def tab4_exec(ldap_user: str, ldap_pw: str):
                     table_of_error.loc[len(table_of_error)] = [
                         hr_code, list_error[i].split("-", 1)[1]]
                 umc_page.get_umc_url()
-        st.write(app_msg.APP_MESSAGE.APP_FINISH_MSG)
+        st.write(app_msg.APP_FINISH_MSG)
 
     if update_employed_since_button:
-        with st.spinner(app_msg.APP_MESSAGE.APP_RUNNING_MSG):
-            # Start Selenium
-            umc_page = login_to_site(ldap_user=ldap_user, ldap_pw=ldap_pw)
-            table_of_error = pd.DataFrame(columns=["Hr Code", "Steps"])
-            left, right = st.columns(
-                [0.4, 0.6], vertical_alignment="top", gap="large")
-            # loop through CSV & Search for HR code
+        with st.spinner(app_msg.APP_RUNNING_MSG):
+            request = authen_get_UMC_session(
+                username=ldap_user, password=ldap_pw)
+            if request is None:
+                return
             for index, row in csv_data.iterrows():
                 hr_code = row["HR Code"]
                 employedSince = row["Employed Since"]
-                list_error = update_employed_since(
-                    umc_page=umc_page,
-                    hr_code=hr_code,
-                    employedSince=employedSince
-                )
+                status = update_employed_since(
+                    umc_request=request, hr_code=hr_code, employedSince=employedSince)
                 # Keep this line for debugging, but it might print None
-                left.write(list_error)
-                for i in range(len(list_error)):
-                    table_of_error.loc[len(table_of_error)] = [
-                        hr_code, list_error[i].split("-", 1)[1]]
-                umc_page.get_umc_url()
-        st.write(app_msg.APP_MESSAGE.APP_FINISH_MSG)
+            st.write(app_msg.APP_FINISH_MSG)
 
     if update_mail_button:
-        with st.spinner(app_msg.APP_MESSAGE.APP_RUNNING_MSG):
+        with st.spinner(app_msg.APP_RUNNING_MSG):
             # Start Selenium
             umc_page = login_to_site(ldap_user=ldap_user, ldap_pw=ldap_pw)
             table_of_error = pd.DataFrame(columns=["Hr Code", "Steps"])
@@ -377,7 +367,7 @@ def tab4_exec(ldap_user: str, ldap_pw: str):
                     table_of_error.loc[len(table_of_error)] = [
                         hr_code, list_error[i].split("-", 1)[1]]
                 umc_page.get_umc_url()
-        st.write(app_msg.APP_MESSAGE.APP_FINISH_MSG)
+        st.write(app_msg.APP_FINISH_MSG)
 
 
 def tab5_exec():
@@ -427,18 +417,24 @@ def tab5_exec():
 
             # Run Reactivate Scripts if the verification returns valid
             if st.session_state['confirmOTP_clicked'] and result is True:
-                with st.spinner(app_msg.APP_MESSAGE.APP_RUNNING_MSG):
+                with st.spinner(app_msg.APP_RUNNING_MSG):
                     from time import sleep
                     # Trigger request to CBA Vault to get UMC password
-                    cred = system_env_get_cred()
+                    usercred = system_env_get_cred("UMCAdminUser")
+                    passcred = system_env_get_cred("UMCAdminCred")
                     sleep(5)
                     request = umc_start_session(token=authenticate_swagger(
-                        username="umc_admin1", password=cred))
+                        username=usercred, password=passcred))
+                    hr_codes = []
+
                     for index, hr_code in enumerate(login_name_input_area_list):
+                        hr_codes.append(hr_code)
                         status = reactivate_account(
-                            umc_request=request, hr_code=hr_code) and add_homesis_homesis_user(umc_request=request, hr_code=hr_code)
+                            umc_request=request, hr_code=hr_code)
                         if status:
                             st.write(f"{hr_code}: Reactivation Successful!")
+                    if add_homesis_homesis_user(umc_request=request, hr_codes=hr_codes):
+                        st.write(f"{hr_code}: Add HSIS Roles Successful!")
                     st.session_state['getOTP_clicked'] = False
                     st.session_state['confirmOTP_clicked'] = False
                     st.rerun()
@@ -454,16 +450,16 @@ def tab6_exec():
         )
         emergency = st.button("Perform emergency add role", type="primary")
         if emergency:
-            with st.spinner(app_msg.APP_MESSAGE.APP_RUNNING_MSG):
-                cred = system_env_get_cred()
+            with st.spinner(app_msg.APP_RUNNING_MSG):
+                usercred = system_env_get_cred("UMCAdminUser")
+                passcred = system_env_get_cred("UMCAdminCred")
                 request = umc_start_session(authenticate_swagger(
-                    username="umc_admin1", password=cred))
-                for code in hr_code_input_area_lines:
-                    add_role_status = add_role_umc(
-                        umc_request=request, hr_code=code, role="NON_HOSEL_USER")
-                    if add_role_status:
-                        st.write(code + ": Emergency add role successful!")
-            st.write(app_msg.APP_MESSAGE.APP_FINISH_MSG)
+                    username=usercred, password=passcred))
+                add_role_status = add_role_umc(
+                    umc_request=request, hr_codes=hr_code_input_area_lines, role="NON_HOSEL_USER")
+                if add_role_status:
+                    st.write("Emergency add role successful!")
+            st.write(app_msg.APP_FINISH_MSG)
 
 
 if __name__ == "__main__":

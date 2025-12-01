@@ -354,14 +354,18 @@ class umc_request(Session):
                                             }""")
 
     # API body to patch roles
-    _PATCH_MODIFY_ROLE_SINGLE_USER = Template(
+    _PATCH_ROLE_INFO = Template(
+        """
+        {
+            "operation":"${action}",
+            "value": "${login}"
+        }
+        """)
+    _PATCH_MODIFY_ROLE_SKELETON = Template(
         """
         {
         "members": [
-            {
-            "operation": "${action}",
-            "value": "${login}"
-            }
+            ${value}
         ]
         }
         """
@@ -409,6 +413,48 @@ class umc_request(Session):
         """
     )
 
+    # API Body to create new account
+    _POST_NEW_ACCOUNT_BODY = Template(
+        """
+        {
+        "active": true,
+        "displayName": "${displayName}",
+        "emails": [
+            {
+            "primary": true,
+            "type": "work",
+            "value": "${email}"
+            }
+        ],
+        "externalId": "${hrcode}",
+        "managedExternally": false,
+        "name": {
+            "familyName": "${lastName}",
+            "givenName": "${firstName}"
+        },
+        "phoneNumbers": [
+            {
+            "primary": false,
+            "type": "mobile",
+            "value": "${phone}"
+            },
+            {
+            "primary": true,
+            "type": "work",
+            "value": "${phone}"
+            }
+        ],
+        "schemas": [
+            "urn:scim:schemas:core:1.0"
+        ],
+        "startDate": "${startDate}",
+        "title": "RA",
+        "userName": "${login}"
+        }
+        """
+        # Format startDate dd.mm.yy
+    )
+
     def __init__(self, token: str, url: str = UMC_DEFAULT_URL, auth_type: str = "basic"):
         super().__init__(token, url, auth_type)
 
@@ -437,32 +483,45 @@ class umc_request(Session):
             bool: status of the request call
         """
         endpoint = f"{self._USER_MANAGEMENT}{self._API_SCIM_USER_MANAGEMENT}{hr_code}"
+        payload = ""
+        # Prepare payload based on element to update
+        match element:
+            case "phone":
+                payload = json.loads(
+                    self._PATCH_PHONE_PARAM_BODY.substitute(value=value))
+            case "email":
+                payload = json.loads(
+                    self._PATCH_EMAIL_PARAM_BODY.substitute(value=value))
+            case "firstname":
+                payload = json.loads(
+                    self._PATCH_NAME_PARAM_BODY.substitute(firstName=value))
+            case "lastname":
+                payload = json.loads(
+                    self._PATCH_NAME_PARAM_BODY.substitute(lastName=value))
+            case _:  # Default Case
+                # Prepare JSON-safe value for template
+                if isinstance(value, str):
+                    value_json = f'"{value}"'  # Add quotes for strings
+                elif isinstance(value, bool):
+                    value_json = "true" if value else "false"  # Lowercase for JSON
+                else:
+                    value_json = value  # Numbers stay as-i
 
-        # Prepare JSON-safe value for template
-        if isinstance(value, str):
-            value_json = f'"{value}"'  # Add quotes for strings
-        elif isinstance(value, bool):
-            value_json = "true" if value else "false"  # Lowercase for JSON
-        else:
-            value_json = value  # Numbers stay as-is
+                payload = json.loads(self._PATCH_SINGLE_PARAM_BODY.substitute(
+                    param=element, value=value_json))
 
-        payload = json.loads(self._PATCH_SINGLE_PARAM_BODY.substitute(
-            param=element, value=value_json))
         response = self.patch_request(endpoint=endpoint, payload=payload)
         # Verify the status of the request call
         if response.status_code >= 400:
-            # reform = self.get_user_info(hr_code=hr_code, element="login")
-            # if reform is None:
             return False
-            # return self.patch_user_single_info(hr_code=reform, element=element, value=value)
         else:
             return True
 
-    def patch_user_single_role(self, hr_code: str, role: str, action: str) -> bool:
+    def patch_user_single_role(self, hr_codes: list, role: str, action: str) -> bool:
         """send PATCH request to update user role on UMC
 
         Args:
-            hr_code (str): HR code of the target account
+            hr_codes (list): list of HR code of the target accounts
             role (str): the role that need to take action
             action (str): the action that the PATCH will send (add / delete)
 
@@ -470,11 +529,38 @@ class umc_request(Session):
             bool: status of the request call
         """
         endpoint = f"{self._USER_MANAGEMENT}{self._API_SCIM_GROUP_MANAGEMENT}{role}"
-        payload = json.loads(self._PATCH_MODIFY_ROLE_SINGLE_USER.substitute(
-            action=action, login=hr_code))
+        json_data = ""
+        # payload = json.loads(self._PATCH_MODIFY_ROLE_SINGLE_USER.substitute(
+        #     action=action, login=hr_code))
+        for code in hr_codes:
+            json_data = json_data + \
+                self._PATCH_ROLE_INFO.substitute(
+                    action=action, login=code) + ",\n"
+        json_data = json_data.rstrip(',\n')
+        payload = json.loads(
+            self._PATCH_MODIFY_ROLE_SKELETON.substitute(value=json_data))
         response = self.patch_request(endpoint=endpoint, payload=payload)
 
         # Verify the status of the request call
+        if response.status_code >= 400:
+            return False
+        else:
+            return True
+
+    def create_new_account(self, new_accounts_data: dict) -> bool:
+        """This is create new account request
+
+        Args:
+            new_accounts_data (dict): dictionary of data that the creating account contains
+
+        Returns:
+            bool: status of the action
+        """
+        endpoint = f"{self._USER_MANAGEMENT}{self._API_SCIM_USER_MANAGEMENT}"
+        payload = json.loads(self._POST_NEW_ACCOUNT_BODY.substitute(
+            hr_code=hr_code, displayName=displayName, email=email, lastName=lastName, firstName=firstName, phone=phone, startDate=startDate, login=login))
+        response = self.post_request(endpoint=endpoint, payload=payload)
+
         if response.status_code >= 400:
             return False
         else:

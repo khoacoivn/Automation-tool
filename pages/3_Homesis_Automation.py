@@ -155,12 +155,12 @@ def main():
                         role=role,
                     )
                     left.write(list_of_error)
-                    for i in range(len(list_of_error)):
-                        table_of_error = table_of_error.append(
-                            {"Hr Code": hr_code,
-                                "Steps": list_of_error[i].split("-", 1)[1]},
-                            ignore_index=True,
-                        )
+                    # for i in range(len(list_of_error)):
+                    #     table_of_error = table_of_error.append(
+                    #         {"Hr Code": hr_code,
+                    #             "Steps": list_of_error[i].split("-", 1)[1]},
+                    #         ignore_index=True,
+                    #     )
                     homesis_page.get_homesis_url()
                     homesis_page.access_user_managerment()
                 rigth.write("Run through " +

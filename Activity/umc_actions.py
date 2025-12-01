@@ -41,7 +41,7 @@ def login_to_site(ldap_user: str, ldap_pw: str) -> umc:
     return umc_page
 
 
-def add_role_umc(umc_request: umc_request, hr_code: str, role: str) -> bool:
+def add_role_umc(umc_request: umc_request, hr_codes: list, role: str) -> bool:
     """This function is used to perform add role as a datasource on UMC system
 
     Args:
@@ -53,10 +53,10 @@ def add_role_umc(umc_request: umc_request, hr_code: str, role: str) -> bool:
         bool: status of the action
     """
     return umc_request.patch_user_single_role(
-        hr_code=hr_code, role=role, action="add")
+        hr_codes=hr_codes, role=role.strip(), action="add")
 
 
-def add_multi_role_umc(umc_request: umc_request, hr_code: str, role_list: list[str]) -> bool:
+def add_multi_role_umc(umc_request: umc_request, hr_codes: list, role_list: list[str]) -> bool:
     """This function is used to perform add role by list on UMC system 
 
     Args:
@@ -73,14 +73,14 @@ def add_multi_role_umc(umc_request: umc_request, hr_code: str, role_list: list[s
     success = True
     for role in role_list:
         result = umc_request.patch_user_single_role(
-            hr_code=hr_code, role=role, action="add")
+            hr_codes=hr_codes, role=role.strip(), action="add")
         if not result:
             success = False
 
     return success
 
 
-def remove_role_umc(umc_request: umc_request, hr_code: str, role: str) -> bool:
+def remove_role_umc(umc_request: umc_request, hr_codes: list, role: str) -> bool:
     """
     Removes a specified role from a user in the UMC page.
 
@@ -96,16 +96,16 @@ def remove_role_umc(umc_request: umc_request, hr_code: str, role: str) -> bool:
     Returns:
         bool: True if the role was successfully removed, False otherwise.
     """
-    return umc_request.patch_user_single_role(hr_code=hr_code, role=role, action="delete")
+    return umc_request.patch_user_single_role(hr_codes=hr_codes, role=role.strip(), action="delete")
 
 
-def remove_multi_role_umc(umc_request: umc_request, hr_code: str, role_list: list[str]) -> bool:
+def remove_multi_role_umc(umc_request: umc_request, hr_codes: list, role_list: list[str]) -> bool:
     """
     This function removes all roles within a specified role list
 
     Args:
         umc_request (umc_request): The UMC request object
-        hr_code (str): The HR code of the user
+        hr_code (list): The HR code list of the user
         role_list (list[str]): the role list need to be removed
 
     Returns:
@@ -117,7 +117,7 @@ def remove_multi_role_umc(umc_request: umc_request, hr_code: str, role_list: lis
     success = True
     for role in role_list:
         result = umc_request.patch_user_single_role(
-            hr_code=hr_code, role=role, action="add")
+            hr_codes=hr_codes, role=role.strip(), action="delete")
         if not result:
             success = False
 
@@ -152,7 +152,7 @@ def check_account_status(umc_request: umc_request, hr_code: str) -> str:
 # Specific-case function
 
 
-def add_homesis_homesis_user(umc_request: umc_request, hr_code: str) -> bool:
+def add_homesis_homesis_user(umc_request: umc_request, hr_codes: list) -> bool:
     """This is a function to active a user and adding HOMESIS and HOMESIS_USER as his owned roles
 
     Args:
@@ -162,7 +162,7 @@ def add_homesis_homesis_user(umc_request: umc_request, hr_code: str) -> bool:
     Returns:
         bool: status of the role adding action
     """
-    return add_multi_role_umc(umc_request=umc_request, hr_code=hr_code, role_list=["HOMESIS", "HOMESIS_USER"])
+    return add_multi_role_umc(umc_request=umc_request, hr_codes=hr_codes, role_list=["HOMESIS", "HOMESIS_USER"])
 
 
 def deactivate_user_with_reason(umc_page: umc, hr_code: str, reason: str) -> bool:
@@ -216,7 +216,7 @@ def deactivate_ra(umc_request: umc_request, hr_code: str) -> bool:
     """_Deactive a specific RA account in UMC page
 
     Args:
-        umc_page (umc): The UMC page object where the operations are performed.
+        umc_request (umc_request): The UMC request object
         hr_code (str): The HR code of the user.
 
     Returns:
@@ -225,77 +225,33 @@ def deactivate_ra(umc_request: umc_request, hr_code: str) -> bool:
     return umc_request.patch_user_single_info(hr_code=hr_code, element="active", value=False)
 
 
-def update_phone_number(umc_page: umc, hr_code: str, phone_number: str) -> bool:
+def update_phone_number(umc_request: umc_request, hr_code: str, phone_number: str) -> bool:
     """This function used to update phone number for target account
 
     Args:
-        umc_page (umc): current active UMC session
+        umc_request (umc_request): The UMC request object
         hr_code (str): target HR code
         phone_number (str): new phone number
 
     Returns:
         list: list of error
     """
-
-    list_of_error = []
-    umc_page.search_hrid(hrid=hr_code)
-    account_status = umc_page.get_search_account_status()
-    # Get account Status before running
-    # Check if account is Inactive
-    if account_status == "Inactive":
-        list_of_error.append(
-            hr_code + " - " + ErrorMessage.umc_message.USER_INACTIVE)
-    if account_status == "Account not found":
-        list_of_error.append(
-            hr_code + " - " + ErrorMessage.umc_message.USER_NOT_FOUND)
-    if account_status == "Active":
-        # Account found, start update phone actions
-        umc_page.click_details_button()
-        umc_page.click_edit()
-        umc_page.update_info(data=phone_number, field=umc_page.detail_phone)
-        umc_page.update_info(data=phone_number, field=umc_page.detail_mobile)
-        umc_page.click_save()
-        # Check if Update successfully
-        list_of_error.append(
-            hr_code + " - " + ErrorMessage.umc_message.USER_UPDATED)
-    return list_of_error
+    return umc_request.patch_user_single_info(hr_code=hr_code, element="phone", value=phone_number)
 
 
-def update_name(umc_page: umc, hr_code: str, first_name: str, last_name: str) -> list:
-    """_summary_
+def update_name(umc_request: umc_request, hr_code: str, first_name: str, last_name: str) -> bool:
+    """This function is to update first name and last name of the user
 
     Args:
-        umc_page (umc): active umc session
-        hr_code (str): _description_
-        first_name (str): _description_
-        last_name (str): _description_
+        umc_request (umc_request): The UMC request object
+        hr_code (str): hr code of the user
+        first_name (str): value to change - First Name
+        last_name (str): value to change - Last Name
 
     Returns:
-        list(str): _description_
+        bool: status of the action
     """
-
-    list_of_error = []
-    umc_page.search_hrid(hrid=hr_code)
-    # Get account Status before running
-    account_status = umc_page.get_search_account_status()
-    # Check if account is Inactive
-    if account_status == "Inactive":
-        list_of_error.append(
-            hr_code + " - " + ErrorMessage.umc_message.USER_INACTIVE)
-    if account_status == "Account not found":
-        list_of_error.append(
-            hr_code + " - " + ErrorMessage.umc_message.USER_NOT_FOUND)
-    if account_status == "Active":
-        # Account found, start update name actions
-        umc_page.click_details_button()
-        umc_page.click_edit()
-        umc_page.update_info(data=first_name, field=umc_page.first_name)
-        umc_page.update_info(data=last_name, field=umc_page.last_name)
-        umc_page.click_save()
-        # Check if Update successfully
-        list_of_error.append(
-            hr_code + " - " + ErrorMessage.umc_message.USER_UPDATED)
-    return list_of_error
+    return umc_request.patch_user_single_info(hr_code=hr_code, element="firstname", value=first_name) and umc_request.patch_user_single_info(hr_code=hr_code, element="lastname", value=last_name)
 
 
 def update_dob(umc_page: umc, hr_code: str, date_of_birth: str) -> list:
@@ -366,16 +322,30 @@ def update_gender(umc_page: umc, hr_code: str, detail_gender: str) -> list:
     return list_of_error
 
 
-def update_employed_since(umc_page: umc, hr_code: str, employedSince: str) -> list:
-    """ Update employed since for account LDAP
+def update_employed_since(umc_request: umc_request, hr_code: str, employedSince: str) -> bool:
+    """Update employed since for account LDAP
 
     Args:
-        umc_page (umc): login to UMC page
-        hr_code (str): HR code format 000xxxx or HCG account A.NguyenV
-        employedSince (str): employed since day format: yyyy-mm-dd
+        umc_request (umc_request): The UMC request object
+        hr_code (str): hr code of the target account
+        employedSince (str): the contract signed date that we need to change
 
     Returns:
-        list: replace and update new employed since
+        bool: status of the action
+    """
+    return umc_request.patch_user_single_info(hr_code=hr_code, element="startDate", value=employedSince)
+
+
+def update_mail(umc_page: umc, hr_code: str, mail: str) -> list:
+    """ Update mail for account LDAP
+
+    Args:
+        umc_request (umc_request): UMC request object
+        hr_code (str): HR code format 000xxxx, RAxxxx, FPTxxx or HCG account ex: A.NguyenV
+        mail (str): input mail to account UMC ex: abc@doamin.com
+
+    Returns:
+        list: replace and update mail for account LDAP
     """
     list_of_error = []
     umc_page.search_hrid(hrid=hr_code)
@@ -389,41 +359,7 @@ def update_employed_since(umc_page: umc, hr_code: str, employedSince: str) -> li
         list_of_error.append(
             hr_code + " - " + ErrorMessage.umc_message.USER_NOT_FOUND)
     if account_status == "Active":
-        # Account found, start update employed since actions
-        umc_page.click_details_button()
-        umc_page.click_edit()
-        umc_page.update_info(data=employedSince, field=umc_page.employedSince)
-        umc_page.click_save()
-        # Check if Update successfully
-        list_of_error.append(
-            hr_code + " - " + ErrorMessage.umc_message.USER_UPDATED)
-    return list_of_error
-
-
-def update_mail(umc_page: umc, hr_code: str, mail: str) -> list:
-    """ Update mail for account LDAP
-
-    Args:
-        umc_page (umc): login to UMC page
-        hr_code (str): HR code format 000xxxx, RAxxxx, FPTxxx or HCG account ex: A.NguyenV
-        mail (str): input mail to account UMC ex: abc@doamin.com
-
-    Returns:
-        list: replace and update mail for account LDAP
-    """
-    list_of_error = []
-    umc_page.search_hrid(hrid=hr_code)
-    # Check account status before running
-    account_status = umc_page.get_search_account_status()
-    # Check if account is Inactive
-    if account_status == "Inactive":
-        list_of_error.append(
-            hr_code + " - " + ErrorMessage.umc_message.USER_INACTIVE)
-    if account_status == "Account not found":
-        list_of_error.append(
-            hr_code + " - " + ErrorMessage.umc_message.USER_NOT_FOUND)
-    if account_status == "Active":
-        # Account found, start update employed since actions
+        # Account found, start update gender actions
         umc_page.click_details_button()
         umc_page.click_edit()
         umc_page.update_info(data=mail, field=umc_page.mail)
@@ -432,3 +368,7 @@ def update_mail(umc_page: umc, hr_code: str, mail: str) -> list:
         list_of_error.append(
             hr_code + " - " + ErrorMessage.umc_message.USER_UPDATED)
     return list_of_error
+
+
+def create_RA_account(umc_request: umc_request):
+    pass

@@ -492,12 +492,6 @@ class umc_request(Session):
             case "email":
                 payload = json.loads(
                     self._PATCH_EMAIL_PARAM_BODY.substitute(value=value))
-            case "firstname":
-                payload = json.loads(
-                    self._PATCH_NAME_PARAM_BODY.substitute(firstName=value))
-            case "lastname":
-                payload = json.loads(
-                    self._PATCH_NAME_PARAM_BODY.substitute(lastName=value))
             case _:  # Default Case
                 # Prepare JSON-safe value for template
                 if isinstance(value, str):
@@ -539,6 +533,27 @@ class umc_request(Session):
         json_data = json_data.rstrip(',\n')
         payload = json.loads(
             self._PATCH_MODIFY_ROLE_SKELETON.substitute(value=json_data))
+        response = self.patch_request(endpoint=endpoint, payload=payload)
+
+        # Verify the status of the request call
+        if response.status_code >= 400:
+            return False
+        else:
+            return True
+
+    def patch_user_firstname_lastname(self, hr_code: str, first_name: str, last_name: str) -> bool:
+        """send PATCH request to update user name on UMC
+
+        Args:
+            hr_code (str): hr code of the target account
+            first_name (str): first name that needs to be updated
+            last_name (str): last name that needs to be updated
+
+        Returns:
+            bool: status of the request
+        """
+        endpoint = f"{self._USER_MANAGEMENT}{self._API_SCIM_USER_MANAGEMENT}{hr_code}"
+        payload = json.loads(self._PATCH_NAME_PARAM_BODY.substitute(lastName=last_name, firstName=first_name))
         response = self.patch_request(endpoint=endpoint, payload=payload)
 
         # Verify the status of the request call

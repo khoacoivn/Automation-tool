@@ -251,9 +251,7 @@ def update_name(umc_request: umc_request, hr_code: str, first_name: str, last_na
     Returns:
         bool: status of the action
     """
-    return umc_request.patch_user_single_info(hr_code=hr_code, element="firstname", value=first_name) and umc_request.patch_user_single_info(hr_code=hr_code, element="lastname", value=last_name)
-
-
+    return umc_request.patch_user_firstname_lastname(hr_code=hr_code, first_name=first_name, last_name=last_name)
 def update_dob(umc_page: umc, hr_code: str, date_of_birth: str) -> list:
     """ Update date of birth for account LDAP
 

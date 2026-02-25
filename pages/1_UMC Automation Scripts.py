@@ -151,14 +151,14 @@ def tab2_exec(ldap_user: str, ldap_pw: str):
     st.divider()
     st.subheader("Remove role for multiple user")
     left, right = st.columns(2, vertical_alignment="top")
-    login_name_input_area = left.text_area("Input login name to remove here")
-    login_name_input_area_list = login_name_input_area.split(
+    login_name_input_area1 = left.text_area("Input login name to remove here")
+    login_name_input_area_list1 = login_name_input_area1.split(
         "\n")  # This return a list
-    role_umc_input_area = right.text_area("Input remove roles here")
-    role_umc_input_area_list = role_umc_input_area.split(
+    role_umc_input_area1 = right.text_area("Input remove roles here")
+    role_umc_input_area_list1 = role_umc_input_area1.split(
         "\n")  # This return a list
 
-    if login_name_input_area.strip() != '' and role_umc_input_area.strip() != '':
+    if login_name_input_area1.strip() != '' and role_umc_input_area1.strip() != '':
         remove_role_umc_btn = st.button("Remove roles UMC", type="primary")
         if remove_role_umc_btn:
             with st.spinner(app_msg.APP_RUNNING_MSG):
@@ -166,14 +166,10 @@ def tab2_exec(ldap_user: str, ldap_pw: str):
                     username=ldap_user, password=ldap_pw)
                 if request is None:
                     return
-                for index in range(len(login_name_input_area_list)):
-                    login_name = login_name_input_area_list[index]
-                    status = remove_multi_role_umc(
-                        umc_request=request, hr_code=login_name.strip(), role_list=role_umc_input_area_list)
-                    if status:
-                        st.write(f"{login_name} - Remove role successful")
+                status = remove_multi_role_umc(umc_request=request, hr_codes=login_name_input_area_list1, role_list=role_umc_input_area_list1)
+                if status:
+                    st.write(" All accounts - Remove role successful")
                 st.write(app_msg.APP_FINISH_MSG)
-
 
 def tab3_exec(ldap_user: str, ldap_pw: str):
     # check active account UMC

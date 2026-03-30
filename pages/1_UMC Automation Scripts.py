@@ -26,7 +26,8 @@ from Activity.umc_actions import (
     update_mail,
     reactivate_account,
     umc_start_session,
-    get_deactivation_date
+    get_deactivation_date,
+    get_account_username
 )
 from Common.constant.app_message import APP_MESSAGE as app_msg
 import pandas as pd
@@ -67,7 +68,7 @@ def main():
     st.subheader("Choose your action on UMC", divider="red")
 
     tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
-        ["Deactivate/Reactive", "Add/Remove Role", "Check status", "Update Info", "Reactivate Accounts", "Get account deactivation date"])
+        ["Deactivate/Reactive", "Add/Remove Role", "Check account info", "Update Info", "Reactivate Accounts", "Get account deactivation date"])
 
     with tab1:
         tab1_exec(ldap_user, ldap_pw)
@@ -179,6 +180,7 @@ def tab3_exec(ldap_user: str, ldap_pw: str):
         "\n"
     )  # This return a list of text area value
     check_status_btn = st.button("Check status account", type="primary")
+    get_username_btn = st.button("Get Username Login")
 
     if check_status_btn:
         with st.spinner(app_msg.APP_RUNNING_MSG):
@@ -214,6 +216,20 @@ def tab3_exec(ldap_user: str, ldap_pw: str):
                       str(len(data_user_status)) + " users")
             data_user_status = data_user_status[data_user_status["Status"] != "INACTIVE"]
             left.write(data_user_status)
+
+    if get_username_btn:
+        with st.spinner(app_msg.APP_RUNNING_MSG):
+            request = authen_get_UMC_session(
+                username=ldap_user, password=ldap_pw)
+            if request is None:
+                return
+            data_user_status_list = []
+            for hr_code in filter(None, hr_code_input_area_lines):
+                username = get_account_username(umc_request=request, hr_code=hr_code)
+                data_user_status_list.append({"HR Code": hr_code, "Username": username})
+            data_user_login = pd.DataFrame(data_user_status_list)
+            st.write(data_user_login)
+            st.write(app_msg.APP_FINISH_MSG)
 
 
 def tab4_exec(ldap_user: str, ldap_pw: str):

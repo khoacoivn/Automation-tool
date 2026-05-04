@@ -4,12 +4,14 @@ import streamlit as st
 import Common.constant.app_message as app_msg
 from Common.constant import app_logic_exception
 from Common.constant.error_message import ErrorMessage
-from Common.supporting import login_status_check, logout_render
+from Common.supporting import login_status_check, logout_render, authenticate_swagger
 
 from Activity.umc_actions import (
     login_to_site as login_to_umc_site,
+    umc_start_session,
     update_dob,
     update_gender,
+    update_name,
 )
 from Activity.homesis_actions import (
     login_to_site as login_to_homesis_site,
@@ -86,7 +88,7 @@ def main():
         return
 
     run_button = st.button(
-        "Run UMC Update DOB/Gender + Homesis Add Role SA",
+        "Run UMC Update DOB/Gender/Name + Homesis Add Role SA",
         type="primary",
     )
 
@@ -99,9 +101,12 @@ def main():
 
     with st.spinner(app_msg.APP_MESSAGE.APP_RUNNING_MSG):
         umc_page = login_to_umc_site(ldap_user=technical_user, ldap_pw=technical_pw)
+        umc_request = umc_start_session(
+            authenticate_swagger(username=technical_user, password=technical_pw)
+        )
         homesis_page = login_to_homesis_site(ldap_user=ldap_user, ldap_pw=ldap_pw)
 
-        if umc_page is None or homesis_page is None:
+        if umc_page is None or umc_request is None or homesis_page is None:
             st.error("Cannot start UMC/Homesis sessions. Please check credentials.")
             return
 
@@ -116,6 +121,7 @@ def main():
                         "HR Code": hr_code,
                         "UMC DOB": "SKIPPED",
                         "UMC Gender": "SKIPPED",
+                        "UMC Name": "SKIPPED",
                         "Homesis Role SA": "SKIPPED",
                         "Detail": "Empty HR Code",
                     }
@@ -136,6 +142,13 @@ def main():
             )
             umc_page.get_umc_url()
 
+            name_status = update_name(
+                umc_request=umc_request,
+                hr_code=hr_code,
+                first_name=str(row["First Name"]).strip(),
+                last_name=str(row["Last Name"]).strip(),
+            )
+
             homesis_errors = add_role_in_bank_SA(
                 homesis_page=homesis_page,
                 hr_code=hr_code,
@@ -153,14 +166,18 @@ def main():
             homesis_success = any(
                 ErrorMessage.homesis_message.CLICK_SAVE_BUTTON in msg for msg in homesis_errors
             )
+            detail_messages = dob_errors + gender_errors + homesis_errors
+            if not name_status:
+                detail_messages.append(f"{hr_code} - Failed to update first/last name on UMC")
 
             run_result.append(
                 {
                     "HR Code": hr_code,
                     "UMC DOB": "OK" if dob_success else "FAIL",
                     "UMC Gender": "OK" if gender_success else "FAIL",
+                    "UMC Name": "OK" if name_status else "FAIL",
                     "Homesis Role SA": "OK" if homesis_success else "FAIL",
-                    "Detail": " | ".join(dob_errors + gender_errors + homesis_errors),
+                    "Detail": " | ".join(detail_messages),
                 }
             )
 

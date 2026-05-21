@@ -129,7 +129,7 @@ class Session:
         return requests.get(
             self.url + endpoint,
             auth=self.authen_token,
-            timeout=10,
+            timeout=20,
             verify=self.verify_ssl
         )
 

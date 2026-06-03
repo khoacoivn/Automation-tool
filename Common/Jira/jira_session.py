@@ -1,6 +1,7 @@
 from requests import Response
 from string import Template
 import json
+import os
 from Common.request_object import Session
 from Common.constant.jira_constant import JiraConst
 from Common.supporting import filter_id_from_response
@@ -16,13 +17,13 @@ class JiraSession(Session):
     - url (str): The URL of the JIRA server.
 
     Methods:
-    - __init__(self, token:str=DEFAULT_TOKEN, url:str='https://sd.homecredit.vn/rest/api/2/'): Initializes a JIRA session object.
+    - __init__(self, token:str=DEFAULT_TOKEN, url:str=os.getenv('JIRA_URL')): Initializes a JIRA session object.
     - parse_ticket(self, result): Parses the result of a ticket request.
     - browse_ticket(self, ticket_key:str): Retrieves and parses a specific ticket.
     """
 
-    # DEFAULT cURL for JIRA API
-    _DEFAULT_URL = "https://sd.homecredit.vn/rest/api/2/"
+    # DEFAULT cURL for JIRA API - loaded from .env
+    _DEFAULT_URL = os.getenv("JIRA_URL")
     _BROWSE_TICKET = "issue/{ticket_key}"
     _JQL_SEARCH = "search?jql="
     _TRANSITION = "issue/{ticket_key}/transitions"

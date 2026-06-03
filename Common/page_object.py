@@ -1,4 +1,5 @@
 import logging
+import os
 from time import sleep
 
 from selenium import webdriver
@@ -13,7 +14,7 @@ from Common.web_element import web_element
 class page_object:
     def __init__(
         self,
-        path: str = "chromedriver.exe",
+        path: str = None,
     ):
         """This is the init function for the base page_object. Please be reminded that we only use ChromeDriver.
 
@@ -24,10 +25,23 @@ class page_object:
         self.default_delay = 0.2
         self.default_timeout = 10
 
+        if path is None:
+            path = os.environ.get("CHROMEDRIVER_PATH")
         self.path = path
 
+        options = webdriver.ChromeOptions()
+        chrome_binary = os.environ.get("CHROME_BINARY")
+        if chrome_binary:
+            options.binary_location = chrome_binary
+        if os.environ.get("CHROME_HEADLESS", "false").lower() == "true":
+            options.add_argument("--headless=new")
+            options.add_argument("--no-sandbox")
+            options.add_argument("--disable-dev-shm-usage")
+            options.add_argument("--disable-gpu")
+            options.add_argument("--window-size=1920,1080")
+
         self.profile = webdriver.ChromeService(executable_path=self.path)
-        self.driver = webdriver.Chrome(service=self.profile)
+        self.driver = webdriver.Chrome(service=self.profile, options=options)
         self.wait = WebDriverWait(
             self.driver, self.default_timeout)
 

@@ -3,12 +3,13 @@ import streamlit as st
 import json
 from requests import Response, post
 import logging
+import os
 from pyotp import TOTP
 from msteamsapi import AdaptiveCard, Container, TeamsWebhook, ContainerStyle
 from ldap3 import Server, Connection, ALL, SUBTREE
 
-REACTIVATE_WEBHOOK_URL = "https://default5675d32119d14c9596842c28ac8f80.a4.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/622b616dc2a9428e9dfa90b97df7a5c2/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=L3Q43N_ADwO3dZ6OiQxFRvl14njkvUvajwawq-kvzos"
-ERROR_WEBHOOK_URL = "https://default5675d32119d14c9596842c28ac8f80.a4.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/2441849b00aa40dfbfd4badcc9f748d3/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ypI1uwC9FCskpObxzJxKqzZD85tSs2lTYV5QfrDcdWs"
+REACTIVATE_WEBHOOK_URL = os.getenv("REACTIVATE_WEBHOOK_URL")
+ERROR_WEBHOOK_URL = os.getenv("ERROR_WEBHOOK_URL")
 
 
 def support_Excel_read(read_path: str, sheet_name: str = "Sheet1") -> DataFrame:
@@ -212,7 +213,8 @@ def generate_OTP():
     """
     try:
         # Generate OTP fucntion
-        timeOTP = TOTP('base32secret3232', interval=600)
+        otp_secret = os.getenv("OTP_SECRET")
+        timeOTP = TOTP(otp_secret, interval=600)
         # Build & send the message card
         card = adaptive_card_build_MSteams(msg_title="Reactivate OTP", param1="Generated OTP: " +
                                            timeOTP.now(), param2="Requestor: " + str(st.session_state["userDisplayName"]))
@@ -283,8 +285,9 @@ def authenticate_HOSELSSO(username: str, password: str) -> bool:
     Returns:
         bool: status of the login
     """
+    sso_url = os.getenv("SSO_URL")
     response = post(
-        url="https://sso.homecredit.vn/opensso/identity/json/authenticate", data={
+        url=sso_url, data={
             "username": username.strip(),
             "password": password.strip()})
     if response.status_code == 200:

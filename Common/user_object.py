@@ -1,5 +1,6 @@
 from datetime import datetime
 import hashlib
+import os
 from ldap3 import Server, Connection, ALL, SUBTREE
 import streamlit as st
 
@@ -69,10 +70,14 @@ class User:
 
 def authenticate_ldap(username: str, password: str) -> dict:
     try:
-        server = Server("ldap://vn-ldaps.hcg.homecredit.net", get_info=ALL)
+        ldap_url = os.getenv("LDAP_URL")
+        ldap_user_ou = os.getenv("LDAP_USER_OU")
+        ldap_user_group_dn = os.getenv("LDAP_USER_GROUP_DN")
+        
+        server = Server(ldap_url, get_info=ALL)
         conn = Connection(
             server,
-            f"CN={username},OU=Users,OU=VN,DC=hcg,DC=homecredit,DC=net",
+            f"CN={username},{ldap_user_ou}",
             password,
             auto_bind=True
         )
@@ -81,8 +86,8 @@ def authenticate_ldap(username: str, password: str) -> dict:
             raise AuthenticationError("LDAP bind failed.")
 
         conn.search(
-            search_base="OU=Users,OU=VN,DC=hcg,DC=homecredit,DC=net",
-            search_filter=f"(&(samAccountName={username})(memberOf=CN=VN.SD.SD_AUTOMATION_HUB.USER,OU=Groups,OU=VN,DC=hcg,DC=homecredit,DC=net))",
+            search_base=ldap_user_ou,
+            search_filter=f"(&(samAccountName={username})(memberOf={ldap_user_group_dn}))",
             search_scope=SUBTREE,
             attributes=["displayName", "employeeID", "title"]
         )

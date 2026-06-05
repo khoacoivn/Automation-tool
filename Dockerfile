@@ -1,6 +1,11 @@
 # Dùng Python 3.12 làm nền tảng, bản slim để image nhỏ gọn hơn
 FROM python:3.12-slim AS base
 
+# Proxy internet cho (apt-get and pip)
+ARG HTTP_PROXY
+ARG HTTPS_PROXY
+ARG NO_PROXY
+
 # Cấu hình Python và pip
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
